@@ -41,6 +41,7 @@ bpy.context.view_layer.objects.active = armature
 # Switch to Edit Mode
 bpy.ops.object.mode_set(mode='EDIT')
 
+# NOTE: This seems to elongate one bone at the expense of the other because the tail of one bone is the head of another perhaps...
 # Select the bone you want to modify
 bone = armature.data.edit_bones["hand.L"]
 # Change the length of the bone by moving its tail
