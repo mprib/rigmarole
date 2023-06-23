@@ -20,7 +20,25 @@ metahuman.name = "test_human"
 bpy.ops.object.empty_add(type='PLAIN_AXES', align='WORLD', location=(1, 0, 1), scale=(1, 1, 1))
 test_empty = bpy.context.object 
 test_empty.name = "left_hand_empty"
- 
+
+# Select the armature object
+armature = bpy.data.objects["test_human"]
+armature.select_set(True)
+bpy.context.view_layer.objects.active = armature
+# Switch to Edit Mode
+bpy.ops.object.mode_set(mode='EDIT')
+
+# Create a new empty and parent the armature to it
+bpy.ops.object.empty_add(type='PLAIN_AXES')
+parent_empty = bpy.context.object
+parent_empty.location.x = metahuman.data.edit_bones["spine"].location.x
+print(metahuman.location.x)
+parent_empty.location.y = metahuman.data.edit_bones["spine"].location.y
+print(metahuman.location.y)
+parent_empty.location.z = metahuman.data.edit_bones["spine"].location.z
+print(metahuman.location.z)
+metahuman.parent = parent_empty
+
 metahuman.pose.bones["hand.L"].constraints.new('IK').target = test_empty
 
 frame_num = 1  # start on frame 1
@@ -30,6 +48,16 @@ bpy.context.scene.frame_set(frame_num)  # set the initial frame
 for i in range(0,10):
     test_empty.location.x -= .1
     test_empty.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
+    metahuman.location.x -= .15
+    metahuman.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
+    frame_num += 10  # increment frame
+    bpy.context.scene.frame_set(frame_num)  # update the current frame
+
+for i in range(0,10):
+    test_empty.location.y += .1
+    test_empty.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
+    metahuman.location.x += .15
+    metahuman.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
     frame_num += 10  # increment frame
     bpy.context.scene.frame_set(frame_num)  # update the current frame
 
@@ -43,13 +71,29 @@ bpy.ops.object.mode_set(mode='EDIT')
 
 # NOTE: This seems to elongate one bone at the expense of the other because the tail of one bone is the head of another perhaps...
 # Select the bone you want to modify
-bone = armature.data.edit_bones["hand.L"]
-# Change the length of the bone by moving its tail
-bone.tail.y += 0.25  # Adjust as needed
 
-armature.data.edit_bones["forearm.L"].tail.y += .25
+# armature.data.edit_bones["upper_arm.L"].use_connect=False
+
+# armature.data.edit_bones["upper_arm.L"].tail.y +=.5
+# armature.data.edit_bones["forearm.L"].tail.y += .5
+
+# armature.data.edit_bones["upper_arm.L"].use_connect= True
+# armature.data.edit_bones["hand.L"].tail.y += .5
 
 # Switch back to Object Mode
 bpy.ops.object.mode_set(mode='OBJECT')
 
+# Select the armature object
+armature = bpy.data.objects["test_human"]
+armature.select_set(True)
+bpy.context.view_layer.objects.active = armature
 
+# Bake the animation
+#bpy.ops.nla.bake(frame_start=1, frame_end=180, only_selected=True, visual_keying=True)
+
+# Select all the pose bones in the armature
+# for bone in armature.pose.bones:
+#     bone.bone.select = True
+
+# Bake the animation for the bones
+#bpy.ops.nla.bake(frame_start=1, frame_end=180, only_selected=True, visual_keying=True)
