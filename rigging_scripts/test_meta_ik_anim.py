@@ -42,23 +42,40 @@ root_empty.name = "root_empty"
 
 ################ Everything up to here seems to be working the way that I would like
 
-# Create a new empty at the head location of the root bone
-bpy.ops.object.empty_add(location=spine_root_location)
-empty = bpy.context.object
+# Store the current location of the armature
+original_location = metahuman.location.copy()
 
-# Parent the armature to the empty
-metahuman.parent = empty
+# Set the desired location for the new origin
+desired_location = (0, 0, 0)  
 
-# Apply the transformation
+# Move the armature to the desired location
+metahuman.location = desired_location
+
+# Select the armature
 bpy.ops.object.select_all(action='DESELECT')
 metahuman.select_set(True)
-bpy.context.view_layer.objects.active = metahuman
-bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+
+# Set the origin to the 3D cursor
+bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+
+# Move the armature back to its original location
+metahuman.location = original_location
+
+##################################
+
+# Parent the armature to the empty
+metahuman.parent = root_empty
+
+# Apply the transformation
+#bpy.ops.object.select_all(action='DESELECT')
+#metahuman.select_set(True)
+#bpy.context.view_layer.objects.active = metahuman
+#bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
 
 # Delete the empty
-bpy.ops.object.select_all(action='DESELECT')
-empty.select_set(True)
-bpy.ops.object.delete()
+#bpy.ops.object.select_all(action='DESELECT')
+#empty.select_set(True)
+#bpy.ops.object.delete()
 
 # frame_num = 1  # start on frame 1
 # bpy.context.scene.frame_set(frame_num)  # set the initial frame
