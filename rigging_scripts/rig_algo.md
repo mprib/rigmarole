@@ -1,5 +1,5 @@
 I need a place to start carving out the steps needed to get the animation working well.
-
+# Import trajectories
 # Model Scaling
 ## Get target segment lengths
 
@@ -14,4 +14,3 @@ Primarily, I think it makes sense to use the IK constraints with a short chain (
 
 The foot tracking is sufficiently bad that it may make better sense to run Damped Tracking to the foot index from the ankle.
 
-    
