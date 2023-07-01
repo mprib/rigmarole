@@ -1,9 +1,6 @@
-# This is a test
-# ok. Trying to write in that scripting window is horrible...here we are now..
-
 import bpy
-import time
 
+############################## CLEAN SLATE ##############################
 # create a clean slate for adding the armature
 ## get a list of all the objects
 all_objects = bpy.context.scene.objects
@@ -14,33 +11,39 @@ for obj in all_objects:
     if obj.type not in ['CAMERA', 'LIGHT']:
         bpy.data.objects.remove(obj, do_unlink=True)
 
-## reset the cursort location to the origin
+# reset the cursor location to the origin
 bpy.context.scene.cursor.location = (0,0,0)
 
+########################## ADD RIG######################################
 # place in a new metahuman rig
-bpy.ops.object.armature_basic_human_metarig_add()
+bpy.ops.object.armature_human_metarig_add()
 metahuman = bpy.context.object
-metahuman.name = "human"
+metahuman.name = "human_rig"
 
+########################### PARENT RIG TO MID HIPS EMPTY ########################
+# change to pose mode to apply the pose of the metarig
+bpy.ops.object.mode_set(mode='POSE')
 
-# Move the cursor to the root of the metahuman rig
-## Get the root bone
-spine_root = metahuman.data.bones["spine"]  # replace "root" with the name of your root bone if it's different
-## Get the head location of the root bone in world coordinates
-spine_root_location = metahuman.matrix_world @ spine_root.head
+# Move the cursor to the midhip region of the metahuman rig
+# Get the root bone
+left_hip_local = metahuman.pose.bones["thigh.L"].head
+right_hip_local = metahuman.pose.bones["thigh.R"].head
+
+left_hip_global = metahuman.matrix_world @ left_hip_local
+right_hip_global = metahuman.matrix_world @ right_hip_local
+
+mid_hips_global = (left_hip_global+right_hip_global)/2
+
 # Move the 3D cursor
-bpy.context.scene.cursor.location = spine_root_location
+bpy.context.scene.cursor.location = mid_hips_global
 
-
-
-#bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
+# switch back to object mode to add the empty
+bpy.ops.object.mode_set(mode='OBJECT')
 
 # create empty at metahuman root
-bpy.ops.object.empty_add(type='PLAIN_AXES', align='WORLD', location=spine_root_location, scale=(1, 1, 1))
-root_empty = bpy.context.object 
-root_empty.name = "root_empty"
-
-################ Everything up to here seems to be working the way that I would like
+bpy.ops.object.empty_add(type='PLAIN_AXES', align='WORLD', location=mid_hips_global, scale=(1, 1, 1))
+rig_empty = bpy.context.object 
+rig_empty.name = "rig_empty"
 
 # Store the current location of the armature
 original_location = metahuman.location.copy()
@@ -61,75 +64,98 @@ bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 # Move the armature back to its original location
 metahuman.location = original_location
 
-##################################
-
 # Parent the armature to the empty
-metahuman.parent = root_empty
+metahuman.parent = rig_empty
+
+# reset the cursor location to the origin
+bpy.context.scene.cursor.location = (0,0,0)
+
+
+# Switch to pose mode
+bpy.context.view_layer.objects.active = metahuman
+bpy.ops.object.mode_set(mode='POSE')
+
+for bone in metahuman.pose.bones:
+    # Bone's head and tail in local space
+    head_local = bone.head
+    tail_local = bone.tail
+
+    # Convert head and tail locations to global space
+    head_global = metahuman.matrix_world @ head_local
+    tail_global = metahuman.matrix_world @ tail_local
+
+    # Print the bone name and the locations of head and tail
+    print("Bone name:", bone.name)
+    # print("Head location (global):", head_global)
+    # print("Tail location (global):", tail_global)
+    # print("---") # just to separate the info about each bone
+
+# Switch back to object mode
+bpy.ops.object.mode_set(mode='OBJECT')
 
 # Apply the transformation
-#bpy.ops.object.select_all(action='DESELECT')
-#metahuman.select_set(True)
-#bpy.context.view_layer.objects.active = metahuman
-#bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+# bpy.ops.object.select_all(action='DESELECT')
+# metahuman.select_set(True)
+# bpy.context.view_layer.objects.active = metahuman
+# bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
 
 # Delete the empty
-#bpy.ops.object.select_all(action='DESELECT')
-#empty.select_set(True)
-#bpy.ops.object.delete()
 
 # frame_num = 1  # start on frame 1
 # bpy.context.scene.frame_set(frame_num)  # set the initial frame
+# ## reset the cursort location to the origin
+# bpy.context.scene.cursor.location = (0,0,0)
 
+# ##################################################
 
 # for i in range(0,10):
-#     test_empty.location.x -= .1
-#     test_empty.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
-#     metahuman.location.x -= .15
-#     metahuman.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
+#     root_empty.location.x -= .1
+#     root_empty.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
+#     # metahuman.location.x -= .15
+#     # metahuman.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
 #     frame_num += 10  # increment frame
 #     bpy.context.scene.frame_set(frame_num)  # update the current frame
 
-# for i in range(0,10):
-#     test_empty.location.y += .1
-#     test_empty.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
-#     metahuman.location.x += .15
-#     metahuman.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
-#     frame_num += 10  # increment frame
-#     bpy.context.scene.frame_set(frame_num)  # update the current frame
+# # for i in range(0,10):
+# #     test_empty.location.y += .1
+# #     test_empty.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
+# #     metahuman.location.x += .15
+# #     metahuman.keyframe_insert(data_path="location", frame=frame_num)  # insert keyframe
+# #     frame_num += 10  # increment frame
+# #     bpy.context.scene.frame_set(frame_num)  # update the current frame
 
-# # Select the armature object
-# armature = bpy.data.objects["test_human"]
-# armature.select_set(True)
-# bpy.context.view_layer.objects.active = armature
+# # # Select the armature object
+# metahuman.select_set(True)
+# bpy.context.view_layer.objects.active = metahuman 
 
-# Switch to Edit Mode
+# # Switch to Edit Mode
 # bpy.ops.object.mode_set(mode='EDIT')
 
-# NOTE: This seems to elongate one bone at the expense of the other because the tail of one bone is the head of another perhaps...
-# Select the bone you want to modify
+# # NOTE: This seems to elongate one bone at the expense of the other because the tail of one bone is the head of another perhaps...
+# # Select the bone you want to modify
 
-# armature.data.edit_bones["upper_arm.L"].use_connect=False
+# # armature.data.edit_bones["upper_arm.L"].use_connect=False
 
-# armature.data.edit_bones["upper_arm.L"].tail.y +=.5
-# armature.data.edit_bones["forearm.L"].tail.y += .5
+# # armature.data.edit_bones["upper_arm.L"].tail.y +=.5
+# # armature.data.edit_bones["forearm.L"].tail.y += .5
 
-# armature.data.edit_bones["upper_arm.L"].use_connect= True
-# armature.data.edit_bones["hand.L"].tail.y += .5
+# # armature.data.edit_bones["upper_arm.L"].use_connect= True
+# # armature.data.edit_bones["hand.L"].tail.y += .5
 
-# Switch back to Object Mode
-# bpy.ops.object.mode_set(mode='OBJECT')
+# # Switch back to Object Mode
+# # bpy.ops.object.mode_set(mode='OBJECT')
 
-# # Select the armature object
-# armature = bpy.data.objects["test_human"]
-# armature.select_set(True)
-# bpy.context.view_layer.objects.active = armature
+# # # Select the armature object
+# # armature = bpy.data.objects["test_human"]
+# # armature.select_set(True)
+# # bpy.context.view_layer.objects.active = armature
 
-# Bake the animation
-#bpy.ops.nla.bake(frame_start=1, frame_end=180, only_selected=True, visual_keying=True)
+# # Bake the animation
+# bpy.ops.nla.bake(frame_start=1, frame_end=180, only_selected=True, visual_keying=True)
 
-# Select all the pose bones in the armature
-# for bone in armature.pose.bones:
-#     bone.bone.select = True
+# # Select all the pose bones in the armature
+# # for bone in armature.pose.bones:
+# #     bone.bone.select = True
 
-# Bake the animation for the bones
-#bpy.ops.nla.bake(frame_start=1, frame_end=180, only_selected=True, visual_keying=True)
+# # Bake the animation for the bones
+# #bpy.ops.nla.bake(frame_start=1, frame_end=180, only_selected=True, visual_keying=True)
