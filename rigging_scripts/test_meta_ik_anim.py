@@ -18,14 +18,14 @@ bpy.context.scene.cursor.location = (0,0,0)
 # place in a new metahuman rig
 bpy.ops.object.armature_human_metarig_add()
 metahuman = bpy.context.object
+metahuman.pose.ik_solver = 'ITASC'   # non-standard IK solver 
 metahuman.name = "human_rig"
 
-########################### PARENT RIG TO MID HIPS EMPTY ########################
+########################### Shift rig origin to mid hips for ease of rig movement #########
 # change to pose mode to apply the pose of the metarig
 bpy.ops.object.mode_set(mode='POSE')
 
-# Move the cursor to the midhip region of the metahuman rig
-# Get the root bone
+# get the mid hip location in a global frame of reference
 left_hip_local = metahuman.pose.bones["thigh.L"].head
 right_hip_local = metahuman.pose.bones["thigh.R"].head
 
@@ -34,27 +34,11 @@ right_hip_global = metahuman.matrix_world @ right_hip_local
 
 mid_hips_global = (left_hip_global+right_hip_global)/2
 
-# Move the 3D cursor
+# Move the 3D cursor to the target origin
 bpy.context.scene.cursor.location = mid_hips_global
 
-# switch back to object mode to add the empty
+# switch back to object mode and select the rig
 bpy.ops.object.mode_set(mode='OBJECT')
-
-# create empty at metahuman root
-bpy.ops.object.empty_add(type='PLAIN_AXES', align='WORLD', location=mid_hips_global, scale=(1, 1, 1))
-rig_empty = bpy.context.object 
-rig_empty.name = "rig_empty"
-
-# Store the current location of the armature
-original_location = metahuman.location.copy()
-
-# Set the desired location for the new origin
-desired_location = (0, 0, 0)  
-
-# Move the armature to the desired location
-metahuman.location = desired_location
-
-# Select the armature
 bpy.ops.object.select_all(action='DESELECT')
 metahuman.select_set(True)
 
@@ -62,15 +46,13 @@ metahuman.select_set(True)
 bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
 # Move the armature back to its original location
-metahuman.location = original_location
-
-# Parent the armature to the empty
-metahuman.parent = rig_empty
+metahuman.location = mid_hips_global
 
 # reset the cursor location to the origin
 bpy.context.scene.cursor.location = (0,0,0)
 
 
+####################### GET A LIST OF ALL BONES   ########################
 # Switch to pose mode
 bpy.context.view_layer.objects.active = metahuman
 bpy.ops.object.mode_set(mode='POSE')
