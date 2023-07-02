@@ -1,2 +1,3 @@
 .venv/*
-rigging_scripts/python.blend
+*.blend
+*.blend1
