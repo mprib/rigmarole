@@ -5,7 +5,8 @@ import bpy
 import os
 
 # Use your own script name here:
-filename = "C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\test_meta_ik_anim.py"
+# filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\test_meta_ik_anim.py"
+filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\import_empties.py"
 
 filepath = os.path.join(os.path.dirname(bpy.data.filepath), filename)
 global_namespace = {"__file__": filepath, "__name__": "__main__"}
