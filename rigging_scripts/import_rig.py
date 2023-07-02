@@ -59,7 +59,6 @@ def export_empties(csv_list_dict):
         frame_index = int(frame["sync_index"])
 
         for empty_name in empty_names:
-        
             location = get_location(frame, empty_name)
             if location is not None:
                 set_empty_location_at_frame(empty_name,frame_index,location)
@@ -129,29 +128,58 @@ def get_human_rig():
 
     return metahuman
 
-if True:
+##############################################
+
+processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam\recording_1\HOLISTIC_OPENSIM")
+
+config_path = Path(processed_folder, "config.toml")
+config_dict = toml.load(config_path)
+
+fps = config_dict["fps_recording"]
+
+trajectory_data_path = Path(processed_folder, "xyz_HOLISTIC_OPENSIM_labelled.csv")
+
+clear_scene()
+# load in trajectory data
+# Create an empty list to hold the data
+data = []
+# Open the CSV file and process the inputs one by one
+print(f"beginning to load csv data at {time.time()}")
+with open(trajectory_data_path, 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        data.append(row)
+print(f"Completing load of csv data at {time.time()}")
+
+export_empties(data)
+metahuman = get_human_rig()
+rig_anchors = ["right_hip", "left_hip"]
+
+### setting human rig location based on rig_anchor points
+for frame in data:
+    sync_index = int(frame["sync_index"])
     
-    processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam\recording_1\HOLISTIC_OPENSIM")
+    rig_anchor_locations = []
+    # get an average location for a given set of anchors
+    for anchor in rig_anchors:
+        anchor_location = get_location(frame,anchor)
+        print(f"Location of {anchor} is {anchor_location}")
+        rig_anchor_locations.append(anchor_location)     
 
-    config_path = Path(processed_folder, "config.toml")
-    config_dict = toml.load(config_path)
+    observed_anchor_locations = [loc for loc in rig_anchor_locations if loc is not None]
+    print(f"observed anchor locations are: {observed_anchor_locations}")
+    anchor_count = len(observed_anchor_locations)
+    partial_location = [(loc[0]/anchor_count, loc[1]/anchor_count, loc[2]/anchor_count) for loc in observed_anchor_locations]
 
-    fps = config_dict["fps_recording"]
+    mean_anchor_location = [0,0,0]
+    for loc in partial_location:
+        mean_anchor_location[0]+=loc[0]
+        mean_anchor_location[1]+=loc[1]
+        mean_anchor_location[2]+=loc[2]
 
-    trajectory_data_path = Path(processed_folder, "xyz_HOLISTIC_OPENSIM_labelled.csv")
 
-    clear_scene()
-    # load in trajectory data
-    # Create an empty list to hold the data
-    data = []
-    # Open the CSV file and process the inputs one by one
-    print(f"beginning to load csv data at {time.time()}")
-    with open(trajectory_data_path, 'r') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            data.append(row)
-    print(f"Completing load of csv data at {time.time()}")
+    print(f"Mean Anchor Location used for rig tracking is {mean_anchor_location}")
 
-    export_empties(data)
-
-    metahuman = get_human_rig()
+    metahuman.location = mean_anchor_location
+    metahuman.keyframe_insert(data_path="location", frame=sync_index)  # insert keyframe
+    bpy.context.scene.frame_set(sync_index)  # update the current frame
