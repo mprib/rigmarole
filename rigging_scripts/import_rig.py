@@ -37,7 +37,6 @@ def create_empties(names):
         empty = bpy.context.object
         empty.name = name
 
-    
 def set_empty_location_at_frame(name, frame_index, location):
     """
     name:str
@@ -48,8 +47,6 @@ def set_empty_location_at_frame(name, frame_index, location):
     empty.location = location
     empty.keyframe_insert(data_path='location', frame = frame_index)
 
-
-#%%
 def export_empties(csv_list_dict):
     # create a list of all the empties that need to get populated in the animation
     all_columns = list(csv_list_dict[0].keys())
@@ -87,12 +84,6 @@ def get_location(sync_index_dict, empty_name):
         location = None
     
     return location
-
-
-
-
-# %%
-
 
 def get_human_rig():
     """
@@ -138,7 +129,7 @@ def get_human_rig():
 
     return metahuman
 
-if __name__ == "__main__":
+if True:
     
     processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam\recording_1\HOLISTIC_OPENSIM")
 
