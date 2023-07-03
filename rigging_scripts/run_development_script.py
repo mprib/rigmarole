@@ -18,8 +18,22 @@ def run_script(filename):
 
 
 filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\import_rig.py"
-run_script(filename)
+# run_script(filename)
 
 
-#filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\load_meta_ik_anim.py"
+#filename = r"C:\Users\ Mac Prible\repos\learn_blender\rigging_scripts\load_meta_ik_anim.py"
 #run_script(filename)  
+
+
+
+bpy.ops.object.empty_add(type='PLAIN_AXES')
+bpy.ops.object.constraint_add(type="TRACK_TO")
+empty.constraints["Track To"].name = "Track To"
+bpy.ops.constraints["Track To"].target = bpy.data.objects["Camera"]
+empty = bpy.context.object
+
+empty.name = "anchor"
+
+
+
+

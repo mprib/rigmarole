@@ -36,7 +36,7 @@ def create_empties(names):
         bpy.ops.object.empty_add(type='PLAIN_AXES')
         empty = bpy.context.object
         empty.name = name
-
+    
 def set_empty_location_at_frame(name, frame_index, location):
     """
     name:str
@@ -47,7 +47,7 @@ def set_empty_location_at_frame(name, frame_index, location):
     empty.location = location
     empty.keyframe_insert(data_path='location', frame = frame_index)
 
-def export_empties(csv_list_dict):
+def import_empties(csv_list_dict):
     # create a list of all the empties that need to get populated in the animation
     all_columns = list(csv_list_dict[0].keys())
     empty_names = [field_name[0:-2] for field_name in all_columns if field_name[-2:] == "_x"]
@@ -126,7 +126,66 @@ def get_human_rig():
     # reset the cursor location to the origin
     bpy.context.scene.cursor.location = (0,0,0)
 
+
     return metahuman
+
+def create_anchor(rig_anchors, track_to_anchor):
+    """
+    create an anchor empty to parent the rig to 
+    """
+   
+    rig_anchors = ["left_hip", "right_hip"] 
+    # create a new anchor
+    bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+    bpy.data.objects['Camera'].select_set(True)
+
+    bpy.ops.object.empty_add(type='PLAIN_AXES')
+    bpy.ops.object.constraint_add(type="TRACK_TO")
+    bpy.context.object.constraints["Track To"].name = "Track To"
+    bpy.context.object.constraints["Track To"].target = bpy.data.objects[track_to_anchor]
+    bpy.context.object.constraints["Track To"].track_axis = "TRACK_Y"
+    empty = bpy.context.object
+    empty.name = "anchor"
+
+    ### setting human rig location based on rig_anchor points
+    for frame in data:
+        sync_index = int(frame["sync_index"])
+    
+        rig_anchor_locations = []
+        # get an average location for a given set of anchors
+        for anchor in rig_anchors:
+            anchor_location = get_location(frame,anchor)
+            # print(f"Location of {anchor} is {anchor_location}")
+            rig_anchor_locations.append(anchor_location)     
+
+        observed_anchor_locations = [loc for loc in rig_anchor_locations if loc is not None]
+        # print(f"observed anchor locations are: {observed_anchor_locations}")
+        anchor_count = len(observed_anchor_locations)
+        partial_location = [(loc[0]/anchor_count, loc[1]/anchor_count, loc[2]/anchor_count) for loc in observed_anchor_locations]
+
+        mean_anchor_location = [0,0,0]
+        for loc in partial_location:
+            mean_anchor_location[0]+=loc[0]
+            mean_anchor_location[1]+=loc[1]
+            mean_anchor_location[2]+=loc[2]
+
+
+        # print(f"Mean Anchor Location used for rig tracking is {mean_anchor_location}")
+
+        empty.location = mean_anchor_location
+        empty.keyframe_insert(data_path="location", frame=sync_index)  # insert keyframe
+        bpy.context.scene.frame_set(sync_index)  # update the current frame
+
+
+def set_rig_to_anchor(rig):
+    # bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+    # bpy.data.objects['Camera'].select_set(True)
+
+    # bpy.ops.object.mode_set(mode="OBJECT")
+
+    bpy.data.objects["human_rig"].location = bpy.data.objects['anchor'].location
+    # bpy.data.objects["human_rig"].rotation = bpy.data.objects['anchor'].rotation
+    bpy.data.objects["human_rig"].parent = bpy.data.objects['anchor']
 
 ##############################################
 
@@ -140,10 +199,10 @@ fps = config_dict["fps_recording"]
 trajectory_data_path = Path(processed_folder, "xyz_HOLISTIC_OPENSIM_labelled.csv")
 
 clear_scene()
+
 # load in trajectory data
 # Create an empty list to hold the data
 data = []
-# Open the CSV file and process the inputs one by one
 print(f"beginning to load csv data at {time.time()}")
 with open(trajectory_data_path, 'r') as f:
     reader = csv.DictReader(f)
@@ -151,35 +210,21 @@ with open(trajectory_data_path, 'r') as f:
         data.append(row)
 print(f"Completing load of csv data at {time.time()}")
 
-export_empties(data)
-metahuman = get_human_rig()
+import_empties(data)
+
 rig_anchors = ["right_hip", "left_hip"]
-
-### setting human rig location based on rig_anchor points
-for frame in data:
-    sync_index = int(frame["sync_index"])
-    
-    rig_anchor_locations = []
-    # get an average location for a given set of anchors
-    for anchor in rig_anchors:
-        anchor_location = get_location(frame,anchor)
-        print(f"Location of {anchor} is {anchor_location}")
-        rig_anchor_locations.append(anchor_location)     
-
-    observed_anchor_locations = [loc for loc in rig_anchor_locations if loc is not None]
-    print(f"observed anchor locations are: {observed_anchor_locations}")
-    anchor_count = len(observed_anchor_locations)
-    partial_location = [(loc[0]/anchor_count, loc[1]/anchor_count, loc[2]/anchor_count) for loc in observed_anchor_locations]
-
-    mean_anchor_location = [0,0,0]
-    for loc in partial_location:
-        mean_anchor_location[0]+=loc[0]
-        mean_anchor_location[1]+=loc[1]
-        mean_anchor_location[2]+=loc[2]
+track_to_anchor = rig_anchors[0]
+print("Creating anchor")
+create_anchor(rig_anchors,track_to_anchor)
 
 
-    print(f"Mean Anchor Location used for rig tracking is {mean_anchor_location}")
+print("getting human rig")
+metahuman = get_human_rig()
 
-    metahuman.location = mean_anchor_location
-    metahuman.keyframe_insert(data_path="location", frame=sync_index)  # insert keyframe
-    bpy.context.scene.frame_set(sync_index)  # update the current frame
+print("setting rig to anchor")
+anchor_name = "anchor"
+set_rig_to_anchor(metahuman)
+
+
+
+# %%
