@@ -22,8 +22,13 @@ select_children(root_bone)
 
 # Get the empty object
 empty = bpy.data.objects['right_wrist']
-# Calculate the translation vector
-translation_vector = empty.location - root_bone.tail
+
+# Convert both the empty's location and the bone's tail location to the global space
+global_bone_tail = armature.matrix_world @ root_bone.tail
+global_empty_location = empty.matrix_world.to_translation()
+
+# Calculate the translation vector in the global space
+translation_vector = global_empty_location - global_bone_tail
 
 # Translate the selection
 bpy.ops.transform.translate(value=translation_vector)
