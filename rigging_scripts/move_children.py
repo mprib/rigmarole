@@ -21,23 +21,24 @@ root_bone.select_tail = True
 select_children(root_bone)
 
 # Get the empty object
-empty = bpy.data.objects['right_wrist']
+# empty = bpy.data.objects['right_wrist']
 
-# Calculate the required translation
-translation = armature.matrix_world.inverted() @ empty.matrix_world.to_translation() - root_bone.tail
+# # Calculate the required translation
+# translation = armature.matrix_world.inverted() @ empty.matrix_world.to_translation() - root_bone.tail
 
-# I believe some locations are being moved twice because of heads/tails
-new_locations = []
+# # I believe some locations are being moved twice because of heads/tails
+# new_locations = []
 
-# Apply the translation to selected bones
-for bone in armature.data.edit_bones:
-    if bone.select:
-        if bone.head not in new_locations:
-            bone.head += translation
-            new_locations.append(bone.head)
-        if bone.tail not in new_locations:
-            bone.tail += translation
-            new_locations.append(bone.head)
+# # Apply the translation to selected bones
+# for bone in armature.data.edit_bones:
+#     if bone.select:
+#         if bone.head not in new_locations:
+#             bone.head += translation
+#             new_locations.append(bone.head)
+#             print(new_locations)
+#         if bone.tail not in new_locations:
+#             bone.tail += translation
+#             new_locations.append(bone.head)
+#             print(new_locations)
 
-
-#bpy.ops.object.mode_set(mode='OBJECT')
+# #bpy.ops.object.mode_set(mode='OBJECT')
