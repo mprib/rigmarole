@@ -25,9 +25,7 @@ scaling_frame = 280
 bpy.context.scene.frame_set(scaling_frame)
 
 filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\scale_rig.py"
-# run_script(filename)
+run_script(filename)
 
-#filename = r"C:\Users\ Mac Prible\repos\learn_blender\rigging_scripts\load_meta_ik_anim.py"
-#run_script(filename)  
 
  
