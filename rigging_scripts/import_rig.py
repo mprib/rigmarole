@@ -6,6 +6,7 @@ import toml
 import time
 import csv
 import bpy
+import math
 
 def clear_scene():
     # create a clean slate for adding the armature
@@ -20,32 +21,6 @@ def clear_scene():
 
     # reset cursor to origin, just in case
     bpy.context.scene.cursor.location = (0,0,0)
-    
-
-def create_empties(names): 
-    """
-    names: list of strings
-    """
-    # an object must be selected to go into object mode...
-    # The scene must have something named 'Camera'
-    bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
-    bpy.data.objects['Camera'].select_set(True)
-
-    bpy.ops.object.mode_set(mode="OBJECT")
-    for name in names:
-        bpy.ops.object.empty_add(type='PLAIN_AXES')
-        empty = bpy.context.object
-        empty.name = name
-    
-def set_empty_location_at_frame(name, frame_index, location):
-    """
-    name:str
-    frame_index:int
-    location: tuple of (x,y,z)
-    """
-    empty = bpy.data.objects[name]
-    empty.location = location
-    empty.keyframe_insert(data_path='location', frame = frame_index)
 
 def import_empties(csv_list_dict):
     # create a list of all the empties that need to get populated in the animation
@@ -62,7 +37,22 @@ def import_empties(csv_list_dict):
             location = get_location(frame, empty_name)
             if location is not None:
                 set_empty_location_at_frame(empty_name,frame_index,location)
-                
+
+def create_empties(names): 
+    """
+    names: list of strings
+    """
+    # an object must be selected to go into object mode...
+    # The scene must have something named 'Camera'
+    bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+    bpy.data.objects['Camera'].select_set(True)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for name in names:
+        bpy.ops.object.empty_add(type='PLAIN_AXES')
+        empty = bpy.context.object
+        empty.name = name
+
 def get_location(sync_index_dict, empty_name):
     """
     sync_index_dict: dictionary containng a single row of data from the trajectory csv file
@@ -83,6 +73,16 @@ def get_location(sync_index_dict, empty_name):
         location = None
     
     return location
+    
+def set_empty_location_at_frame(name, frame_index, location):
+    """
+    name:str
+    frame_index:int
+    location: tuple of (x,y,z)
+    """
+    empty = bpy.data.objects[name]
+    empty.location = location
+    empty.keyframe_insert(data_path='location', frame = frame_index)
 
 def get_human_rig():
     """
@@ -91,7 +91,7 @@ def get_human_rig():
     """
     ########################## ADD RIG######################################
     # place in a new metahuman rig
-    bpy.ops.object.armature_human_metarig_add()
+    metahuman = bpy.ops.object.armature_human_metarig_add()
     metahuman = bpy.context.object
     metahuman.pose.ik_solver = 'ITASC'   # non-standard IK solver 
     metahuman.name = "human_rig"
@@ -109,23 +109,24 @@ def get_human_rig():
 
     mid_hips_global = (left_hip_global+right_hip_global)/2
 
-    # Move the 3D cursor to the target origin
-    bpy.context.scene.cursor.location = mid_hips_global
-
     # switch back to object mode and select the rig
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     metahuman.select_set(True)
 
+    # Move the 3D cursor to the target origin
+    bpy.context.scene.cursor.location = mid_hips_global
     # Set the origin to the 3D cursor
     bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
-
-    # Move the armature back to its original location
-    metahuman.location = mid_hips_global
-
     # reset the cursor location to the origin
     bpy.context.scene.cursor.location = (0,0,0)
 
+    #### New Test Code
+    
+    bpy.ops.object.empty_add(type='PLAIN_AXES')
+    rig_anchor = bpy.context.object
+    rig_anchor.name = "rig_anchor"
+    rig_anchor.location = metahuman.location
 
     return metahuman
 
@@ -143,7 +144,8 @@ def create_anchor(rig_anchors, track_to_anchor):
     bpy.ops.object.constraint_add(type="TRACK_TO")
     bpy.context.object.constraints["Track To"].name = "Track To"
     bpy.context.object.constraints["Track To"].target = bpy.data.objects[track_to_anchor]
-    bpy.context.object.constraints["Track To"].track_axis = "TRACK_Y"
+    bpy.context.object.constraints["Track To"].up_axis = 'UP_Z'
+    bpy.context.object.constraints["Track To"].track_axis = 'TRACK_NEGATIVE_X'
     empty = bpy.context.object
     empty.name = "anchor"
 
@@ -169,9 +171,6 @@ def create_anchor(rig_anchors, track_to_anchor):
             mean_anchor_location[1]+=loc[1]
             mean_anchor_location[2]+=loc[2]
 
-
-        # print(f"Mean Anchor Location used for rig tracking is {mean_anchor_location}")
-
         empty.location = mean_anchor_location
         empty.keyframe_insert(data_path="location", frame=sync_index)  # insert keyframe
         bpy.context.scene.frame_set(sync_index)  # update the current frame
@@ -183,9 +182,22 @@ def set_rig_to_anchor(rig):
 
     # bpy.ops.object.mode_set(mode="OBJECT")
 
-    bpy.data.objects["human_rig"].location = bpy.data.objects['anchor'].location
-    # bpy.data.objects["human_rig"].rotation = bpy.data.objects['anchor'].rotation
-    bpy.data.objects["human_rig"].parent = bpy.data.objects['anchor']
+    # bpy.data.objects["human_rig"].location = bpy.data.objects['anchor'].location
+    # bpy.data.objects["human_rig"].parent = bpy.data.objects['anchor']
+    # Get the rig and anchor
+    rig = bpy.data.objects['human_rig']
+    
+    anchor = bpy.data.objects['anchor']
+
+    # Create a new copy location constraint
+    constraint = rig.constraints.new('COPY_LOCATION')
+
+    # Set the target of the constraint to the anchor
+    constraint.target = anchor
+
+    # If you want to copy rotation as well, you can create a COPY_ROTATION constraint in the same way:
+    rotation_constraint = rig.constraints.new('COPY_ROTATION')
+    rotation_constraint.target = anchor
 
 ##############################################
 
@@ -214,12 +226,13 @@ import_empties(data)
 
 rig_anchors = ["right_hip", "left_hip"]
 track_to_anchor = rig_anchors[0]
-print("Creating anchor")
-create_anchor(rig_anchors,track_to_anchor)
 
 
 print("getting human rig")
 metahuman = get_human_rig()
+
+print("Creating anchor")
+create_anchor(rig_anchors,track_to_anchor)
 
 print("setting rig to anchor")
 anchor_name = "anchor"
