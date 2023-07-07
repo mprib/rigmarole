@@ -109,19 +109,14 @@ def get_human_rig():
 
     mid_hips_global = (left_hip_global+right_hip_global)/2
 
-    # switch back to object mode and select the rig
+    # set the object origin to the mid hips 
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     metahuman.select_set(True)
-
-    # Move the 3D cursor to the target origin
     bpy.context.scene.cursor.location = mid_hips_global
-    # Set the origin to the 3D cursor
     bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
-    # reset the cursor location to the origin
     bpy.context.scene.cursor.location = (0,0,0)
 
-    #### New Test Code
     
     bpy.ops.object.empty_add(type='PLAIN_AXES')
     rig_anchor = bpy.context.object
@@ -135,7 +130,7 @@ def create_anchor(rig_anchors, track_to_anchor):
     create an anchor empty to parent the rig to 
     """
    
-    rig_anchors = ["left_hip", "right_hip"] 
+    # rig_anchors = ["left_hip", "right_hip"] 
     # create a new anchor
     bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
     bpy.data.objects['Camera'].select_set(True)
@@ -177,13 +172,6 @@ def create_anchor(rig_anchors, track_to_anchor):
 
 
 def set_rig_to_anchor(rig):
-    # bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
-    # bpy.data.objects['Camera'].select_set(True)
-
-    # bpy.ops.object.mode_set(mode="OBJECT")
-
-    # bpy.data.objects["human_rig"].location = bpy.data.objects['anchor'].location
-    # bpy.data.objects["human_rig"].parent = bpy.data.objects['anchor']
     # Get the rig and anchor
     rig = bpy.data.objects['human_rig']
     
@@ -201,7 +189,7 @@ def set_rig_to_anchor(rig):
 
 ##############################################
 
-processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam\recording_1\HOLISTIC_OPENSIM")
+processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam_A\recording_4\HOLISTIC_OPENSIM")
 
 config_path = Path(processed_folder, "config.toml")
 config_dict = toml.load(config_path)
@@ -224,14 +212,17 @@ print(f"Completing load of csv data at {time.time()}")
 
 import_empties(data)
 
-rig_anchors = ["right_hip", "left_hip"]
-track_to_anchor = rig_anchors[0]
 
 
 print("getting human rig")
 metahuman = get_human_rig()
 
 print("Creating anchor")
+
+
+rig_anchors = ["right_hip", "left_hip"]
+track_to_anchor = rig_anchors[0]
+
 create_anchor(rig_anchors,track_to_anchor)
 
 print("setting rig to anchor")
