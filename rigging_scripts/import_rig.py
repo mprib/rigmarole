@@ -34,7 +34,7 @@ def import_empties(csv_list_dict):
         frame_index = int(frame["sync_index"])
 
         for empty_name in empty_names:
-            location = get_location(frame, empty_name)
+            location = get_landmark_location(frame, empty_name)
             if location is not None:
                 set_empty_location_at_frame(empty_name,frame_index,location)
 
@@ -53,7 +53,7 @@ def create_empties(names):
         empty = bpy.context.object
         empty.name = name
 
-def get_location(sync_index_dict, empty_name):
+def get_landmark_location(sync_index_dict, empty_name):
     """
     sync_index_dict: dictionary containng a single row of data from the trajectory csv file
     because this is written for use in blender, standard csv library import is used providing
@@ -151,7 +151,7 @@ def create_anchor(rig_anchors, track_to_anchor):
         rig_anchor_locations = []
         # get an average location for a given set of anchors
         for anchor in rig_anchors:
-            anchor_location = get_location(frame,anchor)
+            anchor_location = get_landmark_location(frame,anchor)
             # print(f"Location of {anchor} is {anchor_location}")
             rig_anchor_locations.append(anchor_location)     
 
@@ -173,10 +173,8 @@ def create_anchor(rig_anchors, track_to_anchor):
 
 def set_rig_to_anchor(rig):
     # Get the rig and anchor
-    rig = bpy.data.objects['human_rig']
-    
+    # rig = bpy.data.objects['human_rig']
     anchor = bpy.data.objects['anchor']
-
     # Create a new copy location constraint
     constraint = rig.constraints.new('COPY_LOCATION')
 
