@@ -67,6 +67,7 @@ head_bones = {
     "upper_arm.R": "right_shoulder"
 }
 
+
 tail_bones = {
     "upper_arm.L":"left_elbow",
     "upper_arm.R":"right_elbow",
@@ -75,7 +76,9 @@ tail_bones = {
     "shin.L":"left_ankle",
     "shin.R":"right_ankle",
     "forearm.L":"left_wrist",
-    "forearm.R":"right_wrist"
+    "forearm.R":"right_wrist",
+    "shoulder.L":"left_shoulder",
+    "shoulder.R":"right_shoulder",
 }
 
 
