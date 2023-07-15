@@ -55,15 +55,10 @@ def get_human_rig():
     bpy.context.scene.cursor.location = (0,0,0)
 
     return metahuman
-    # bpy.ops.object.empty_add(type='PLAIN_AXES')
-    # rig_anchor = bpy.context.object
-    # rig_anchor.name = "rig_anchor"
-    # rig_anchor.location = metahuman.location
 
 
-def select_children(rig, bone, tail_also = True):
-
-    if tail_also:
+def select_children(rig, bone, first_pass = True):
+    if first_pass:
         rig.select_set(True)
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.armature.select_all(action='DESELECT')
@@ -73,7 +68,7 @@ def select_children(rig, bone, tail_also = True):
         child.select = True
         child.select_head = True
         child.select_tail = True
-        select_children(rig, child, tail_also=False)
+        select_children(rig, child, first_pass=False)
 
 def move_selected(old_location, new_location):
     
@@ -91,26 +86,56 @@ def scale_selected(factor):
    bpy.ops.transform.resize(value=(factor, factor, factor))
   
 
+def scale_distal_segments(rig, proximal_segment_name, scale_factor):
+    rig.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.armature.select_all(action='DESELECT')
+
+    target_segment = rig.data.edit_bones[proximal_segment_name]
+   
+    old_location = copy.copy(target_segment.tail) 
+    print(f"Old location of target segment tail is {old_location}")  
+
+    select_children(rig, target_segment, first_pass=True)
+    scale_selected(scale_factor) # this will cause the proximal segment to also change length and that needs to be reset 
+
+    new_location = copy.copy(target_segment.tail)
+
+    print(f"After scaling of distal segments, target segment tail is now at {new_location}")
+    move_selected(old_location, new_location)
+
+
+
 if __name__ == "__main__":
 
     clear_scene()
     rig = get_human_rig()
 
-    target_segment_name = "upper_arm.R"
-    target_length = 0.5
-
+    # scale_distal_segments(rig,target_segment_name,target_scale)
+    rig.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.armature.select_all(action='DESELECT')
+
+    # target_segment_name = "upper_arm.R"
+    target_segment_name = "forearm.R"
+    target_scale = 1.8
+    target_length  = .45
+
     target_segment = rig.data.edit_bones[target_segment_name]
-   
+    
+    # find out where the tail would be if the segment were longer
     old_location = copy.copy(target_segment.tail) 
     print(f"Old location of target segment tail is {old_location}")  
-    select_children(rig, target_segment, tail_also=True)
-    scale_selected(.75) # this will cause the proximal segment to also change length and that needs to be reset 
+    original_length = target_segment.length
+    print(f"Old segment length is {target_segment.length}")
+
+    target_segment.length = target_length
     new_location = copy.copy(target_segment.tail)
+    # restore the segment to its original length 
     print(f"After scaling of distal segments, target segment tail is now at {new_location}")
-    translation = new_location-old_location
-    move_selected(old_location, new_location)
-    # target_segment.tail = old_location
+    target_segment.length = original_length
+    select_children(rig, target_segment,first_pass=True)
+    move_selected(new_location, old_location)
 
 
-    
+
