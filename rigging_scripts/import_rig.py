@@ -127,7 +127,13 @@ def get_human_rig():
 
 def create_anchor(rig_anchors, track_to_anchor):
     """
-    create an anchor empty to parent the rig to 
+    create an anchor empty to parent the rig to. 
+    
+    Note that this will have not just position, but also orientation. 
+    
+    2 point tracking of the hips seems to manage well and evokes sensible pelvic tilt in the sagittal plane,
+    This is likely owing to the IK.
+    
     """
    
     # rig_anchors = ["left_hip", "right_hip"] 
@@ -209,7 +215,6 @@ with open(trajectory_data_path, 'r') as f:
 print(f"Completing load of csv data at {time.time()}")
 
 import_empties(data)
-
 
 
 print("getting human rig")
