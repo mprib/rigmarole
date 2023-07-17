@@ -118,7 +118,50 @@ class Autorig():
         self.rig.select_set(True)
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.armature.select_all(action='DESELECT')
+
+    def set_hip_width(self, width):
+        self.set_limb_root_width("thigh", "pelvis", width)
+    
+    def set_shoulder_width(self,width):
+        self.set_limb_root_width("upper_arm", "shoulder", width)
+
+    def set_limb_root_width(self, limb_segment_name, trunk_segment_name, width):
         
+        self.enable_edit()
+
+        unilateral_displacement = width/2
+    
+        for side in ["R", "L"]: 
+            bone_name = f"{limb_segment_name}.{side}"
+            bone = self.rig.data.edit_bones[bone_name]
+            initial_global_location = self.rig.matrix_world @ bone.head
+            current_x = initial_global_location[0]
+
+            print(f"current x position is {current_x}")
+
+            if current_x >0:
+                target_x = unilateral_displacement
+            else:
+                target_x = -unilateral_displacement
+
+            print(f"target x position is {target_x}")
+
+            target_global_location = initial_global_location.copy()
+            target_global_location[0] = target_x
+
+            self.select_children(bone)
+            bone.select = True
+            bone.select_head = True
+
+            bone_name = f"{trunk_segment_name}.{side}"
+            bone = self.rig.data.edit_bones[bone_name]
+            bone.select = True
+            bone.select_tail = True
+    
+            move_selected(initial_global_location, target_global_location)    
+        
+        self.enable_edit()
+    
 
 def move_selected(old_location, new_location):
     
@@ -153,7 +196,10 @@ if __name__ == "__main__":
 
     clear_scene()
     autorig = Autorig("test")
-
+    autorig.set_shoulder_width(0.5)
+    autorig.set_hip_width(0.2)
+    # autorig.set_limb_root_width("thigh", "pelvis", 0.1)
+    # autorig.set_limb_root_width("upper_arm", "shoulder", 0.4)
     # autorig.resize_segment("spine", .25)
     # autorig.scale_distal_segments("forearm.R", 1.2)
     # autorig.scale_distal_segments("forearm.L", 1.2)
@@ -163,37 +209,37 @@ if __name__ == "__main__":
     # autorig.resize_segment("spine", .3)
     # autorig.resize_segment("shoulder.R", 0.25)
 
-    autorig.enable_edit()
+    # autorig.enable_edit()
 
-    target_hip_width = 0.5    
+    # target_width = 0.5    
     
-    unilateral_hip_displacement = target_hip_width/2
+    # unilateral_displacement = target_width/2
      
-    bone_name = "thigh.R"
-    bone = autorig.rig.data.edit_bones[bone_name]
-    initial_global_hip__location = autorig.rig.matrix_world @ bone.head
-    print(f"Right hip position is : {initial_global_hip__location}")
-    current_x = initial_global_hip__location[0]
+    # limb_segment_name = "thigh.R"
+    # bone = autorig.rig.data.edit_bones[limb_segment_name]
+    # initial_global_location = autorig.rig.matrix_world @ bone.head
+    # print(f"Right hip position is : {initial_global_location}")
+    # current_x = initial_global_location[0]
 
-    print(f"current x position is {current_x}")
+    # print(f"current x position is {current_x}")
 
-    if current_x >0:
-        target_x = unilateral_hip_displacement
-    else:
-        target_x = -unilateral_hip_displacement
+    # if current_x >0:
+    #     target_x = unilateral_displacement
+    # else:
+    #     target_x = -unilateral_displacement
 
-    print(f"target x position is {target_x}")
+    # print(f"target x position is {target_x}")
 
-    target_global_hip_location = initial_global_hip__location.copy()
-    target_global_hip_location[0] = target_x
+    # target_global_location = initial_global_location.copy()
+    # target_global_location[0] = target_x
 
-    autorig.select_children(bone)
-    bone.select = True
-    bone.select_head = True
+    # autorig.select_children(bone)
+    # bone.select = True
+    # bone.select_head = True
 
-    bone_name = "pelvis.R"
-    bone = autorig.rig.data.edit_bones[bone_name]
-    bone.select = True
-    bone.select_tail = True
+    # trunk_segment_name = "pelvis.R"
+    # bone = autorig.rig.data.edit_bones[trunk_segment_name]
+    # bone.select = True
+    # bone.select_tail = True
     
-    move_selected(initial_global_hip__location, target_global_hip_location)    
+    # move_selected(initial_global_location, target_global_location)    
