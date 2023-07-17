@@ -19,7 +19,7 @@ class Autorig():
 
         self.set_midhip_origin()
         
-        
+
     def set_midhip_origin(self):
         # change to pose mode to apply the pose of the metarig
         # bpy.ops.object.mode_set(mode='POSE')
@@ -162,6 +162,27 @@ class Autorig():
         
         self.enable_edit()
     
+    def get_hip_shoulder_distance(self):
+        """
+        used to fit the torso height to the kinematic capture data. 
+        For this, will just plan to work on averages and symmetricly.
+        """ 
+        self.enable_edit()
+           
+        r_hip = self.rig.data.edit_bones["thigh.R"].head
+        l_hip = self.rig.data.edit_bones["thigh.L"].head
+
+        r_shoulder = self.rig.data.edit_bones["upper_arm.R"].head
+        l_shoulder = self.rig.data.edit_bones["upper_arm.L"].head
+
+        # Compute the distances between the corresponding hip and shoulder
+        r_dist = (r_shoulder - r_hip).length
+        l_dist = (l_shoulder - l_hip).length
+
+        # Compute the mean distance
+        mean_distance = (r_dist + l_dist) / 2
+
+        return mean_distance
 
 def move_selected(old_location, new_location):
     
@@ -175,7 +196,7 @@ def move_selected(old_location, new_location):
 
 
 def scale_selected(factor):
-   bpy.ops.transform.resize(value=(factor, factor, factor))
+    bpy.ops.transform.resize(value=(factor, factor, factor))
 
 def clear_scene():
     # create a clean slate for adding the armature
@@ -191,55 +212,32 @@ def clear_scene():
     # reset cursor to origin, just in case
     bpy.context.scene.cursor.location = (0,0,0)
 
+
     
+ 
 if __name__ == "__main__":
 
     clear_scene()
     autorig = Autorig("test")
     autorig.set_shoulder_width(0.5)
     autorig.set_hip_width(0.2)
-    # autorig.set_limb_root_width("thigh", "pelvis", 0.1)
-    # autorig.set_limb_root_width("upper_arm", "shoulder", 0.4)
-    # autorig.resize_segment("spine", .25)
-    # autorig.scale_distal_segments("forearm.R", 1.2)
-    # autorig.scale_distal_segments("forearm.L", 1.2)
-    # autorig.scale_distal_segments("shin.R", 1.2)
-    # autorig.scale_distal_segments("shin.L", 1.2)
-    # autorig.scale_distal_segments("face", 0.8)
-    # autorig.resize_segment("spine", .3)
-    # autorig.resize_segment("shoulder.R", 0.25)
 
-    # autorig.enable_edit()
 
-    # target_width = 0.5    
+    # from here, going to develop a looping method to set the torso height.     
+
+    target_hip_shoulder_distance = 0.5
     
-    # unilateral_displacement = target_width/2
-     
-    # limb_segment_name = "thigh.R"
-    # bone = autorig.rig.data.edit_bones[limb_segment_name]
-    # initial_global_location = autorig.rig.matrix_world @ bone.head
-    # print(f"Right hip position is : {initial_global_location}")
-    # current_x = initial_global_location[0]
-
-    # print(f"current x position is {current_x}")
-
-    # if current_x >0:
-    #     target_x = unilateral_displacement
-    # else:
-    #     target_x = -unilateral_displacement
-
-    # print(f"target x position is {target_x}")
-
-    # target_global_location = initial_global_location.copy()
-    # target_global_location[0] = target_x
-
-    # autorig.select_children(bone)
-    # bone.select = True
-    # bone.select_head = True
-
-    # trunk_segment_name = "pelvis.R"
-    # bone = autorig.rig.data.edit_bones[trunk_segment_name]
-    # bone.select = True
-    # bone.select_tail = True
+    current_hip_shoulder_distance = autorig.get_hip_shoulder_distance()
+    print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
     
-    # move_selected(initial_global_location, target_global_location)    
+    
+    
+    
+    autorig.resize_segment("spine", .25)
+    autorig.scale_distal_segments("forearm.R", 1.2)
+    autorig.scale_distal_segments("forearm.L", 1.2)
+    autorig.scale_distal_segments("shin.R", 1.2)
+    autorig.scale_distal_segments("shin.L", 1.2)
+    autorig.scale_distal_segments("face", 0.8)
+    autorig.resize_segment("spine", .3)
+    autorig.resize_segment("shoulder.R", 0.25)
