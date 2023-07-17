@@ -43,13 +43,23 @@ class Autorig():
 
 
     def select_children(self, bone, first_pass = True):
+
+        skip_bones = []
+        
         if first_pass:
             self.rig.select_set(True)
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.armature.select_all(action='DESELECT')
             bone.select_tail = True
 
+            # only want to adjust the torso with adjustments to the spine segment length
+            if bone.name == "spine":
+                skip_bones = ["thigh.R", "thigh.L", "pelvis.R", "pelvis.L"]
+                
+
         for child in bone.children:
+            if child.name in skip_bones:
+                continue
             child.select = True
             child.select_head = True
             child.select_tail = True
@@ -58,9 +68,10 @@ class Autorig():
 
     def scale_distal_segments(self, proximal_segment_name, scale_factor):
 
-        self.rig.select_set(True)
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.armature.select_all(action='DESELECT')
+        # self.rig.select_set(True)
+        # bpy.ops.object.mode_set(mode='EDIT')
+        # bpy.ops.armature.select_all(action='DESELECT')
+        self.enable_edit()
 
         target_segment = self.rig.data.edit_bones[proximal_segment_name]
    
@@ -80,9 +91,7 @@ class Autorig():
     def resize_segment(self, segment_name, new_length):
 
         # make sure that rig is in focus and correct mode enabled
-        self.rig.select_set(True)
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.armature.select_all(action='DESELECT')
+        self.enable_edit()
 
         target_segment = self.rig.data.edit_bones[segment_name]
     
@@ -94,6 +103,7 @@ class Autorig():
 
         target_segment.length = new_length
         new_location = copy.copy(target_segment.tail)
+
         # restore the segment to its original length 
         print(f"After scaling of distal segments, target segment tail is now at {new_location}")
         target_segment.length = original_length
@@ -102,7 +112,11 @@ class Autorig():
         # make the actual change in the rig to resize the segment
         move_selected(old_location, new_location)
 
-
+    def enable_edit(self):
+        self.rig.select_set(True)
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.armature.select_all(action='DESELECT')
+        
 
 def move_selected(old_location, new_location):
     
@@ -136,12 +150,21 @@ def clear_scene():
 if __name__ == "__main__":
 
     clear_scene()
-    rig = Autorig("test")
+    autorig = Autorig("test")
 
-    rig.scale_distal_segments("forearm.R", 1.2)
-    rig.scale_distal_segments("forearm.L", 1.2)
-    rig.scale_distal_segments("shin.R", 1.2)
-    rig.scale_distal_segments("shin.L", 1.2)
-    rig.scale_distal_segments("face", 0.8)
-    rig.resize_segment("spine.001", .6)
+    # autorig.resize_segment("spine", .25)
+    # autorig.scale_distal_segments("forearm.R", 1.2)
+    # autorig.scale_distal_segments("forearm.L", 1.2)
+    # autorig.scale_distal_segments("shin.R", 1.2)
+    # autorig.scale_distal_segments("shin.L", 1.2)
+    # autorig.scale_distal_segments("face", 0.8)
+    # autorig.resize_segment("spine", .3)
+    # autorig.resize_segment("shoulder.R", 0.25)
+
+    autorig.enable_edit()
+
+    bone_name = "thigh.R"
+    bone = autorig.rig.data.edit_bones[bone_name]
+    autorig.select_children(bone)
+
     
