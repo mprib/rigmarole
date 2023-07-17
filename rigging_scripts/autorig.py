@@ -22,7 +22,7 @@ class Autorig():
         
     def set_midhip_origin(self):
         # change to pose mode to apply the pose of the metarig
-        bpy.ops.object.mode_set(mode='POSE')
+        # bpy.ops.object.mode_set(mode='POSE')
 
         # get the mid hip location in a global frame of reference
         left_hip_local = self.rig.pose.bones["thigh.L"].head
@@ -39,6 +39,8 @@ class Autorig():
         self.rig.select_set(True)
         bpy.context.scene.cursor.location = mid_hips_global
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+        
+        # reset cursor to global origin
         bpy.context.scene.cursor.location = (0,0,0)
 
 
@@ -163,8 +165,35 @@ if __name__ == "__main__":
 
     autorig.enable_edit()
 
+    target_hip_width = 0.5    
+    
+    unilateral_hip_displacement = target_hip_width/2
+     
     bone_name = "thigh.R"
     bone = autorig.rig.data.edit_bones[bone_name]
-    autorig.select_children(bone)
+    initial_global_hip__location = autorig.rig.matrix_world @ bone.head
+    print(f"Right hip position is : {initial_global_hip__location}")
+    current_x = initial_global_hip__location[0]
 
+    print(f"current x position is {current_x}")
+
+    if current_x >0:
+        target_x = unilateral_hip_displacement
+    else:
+        target_x = -unilateral_hip_displacement
+
+    print(f"target x position is {target_x}")
+
+    target_global_hip_location = initial_global_hip__location.copy()
+    target_global_hip_location[0] = target_x
+
+    autorig.select_children(bone)
+    bone.select = True
+    bone.select_head = True
+
+    bone_name = "pelvis.R"
+    bone = autorig.rig.data.edit_bones[bone_name]
+    bone.select = True
+    bone.select_tail = True
     
+    move_selected(initial_global_hip__location, target_global_hip_location)    
