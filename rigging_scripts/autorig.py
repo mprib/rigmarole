@@ -184,6 +184,40 @@ class Autorig():
 
         return mean_distance
 
+    def scale_single_segment(self, segment_name, factor):
+        self.enable_edit()
+        
+        old_length = self.rig.data.edit_bones[segment_name].length
+        new_length = factor*old_length
+        
+        self.resize_segment(segment_name, new_length)
+        
+    def scale_torso(self, target_hip_shoulder_distance):
+
+        scaled_bones = ["spine", "spine.001", "spine.002", "spine.003"]
+        while abs(self.get_hip_shoulder_distance() - target_hip_shoulder_distance) > 0.001:
+            current_hip_shoulder_distance = self.get_hip_shoulder_distance()
+            delta = abs(current_hip_shoulder_distance - target_hip_shoulder_distance)
+        
+            # take smaller steps as you get closer to target
+            if delta > 0.05:
+                step_size = .1
+            elif delta > .01:
+                step_size = .05
+            else:
+                step_size = .001
+            
+            if current_hip_shoulder_distance > target_hip_shoulder_distance:
+                factor = 1-step_size
+            else:
+                factor = 1+ step_size
+   
+            for bone in scaled_bones:
+                self.scale_single_segment(bone, factor)
+            print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
+        
+        
+
 def move_selected(old_location, new_location):
     
     translation = (
@@ -224,20 +258,35 @@ if __name__ == "__main__":
 
 
     # from here, going to develop a looping method to set the torso height.     
+    # scaled_bones = ["spine", "spine.001", "spine.002", "spine.003"]
+    target_distance = 0.61
+    autorig.scale_torso(target_distance)
+    # while abs(autorig.get_hip_shoulder_distance() - target_distance) > 0.001:
+    #     current_hip_shoulder_distance = autorig.get_hip_shoulder_distance()
+    #     delta = abs(current_hip_shoulder_distance - target_distance)
+        
+    #     # take smaller steps as you get closer to target
+    #     if delta > 0.05:
+    #         step_size = .1
+    #     elif delta > .01:
+    #         step_size = .05
+    #     else:
+    #         step_size = .001
+            
+    #     if current_hip_shoulder_distance > target_distance:
+    #         factor = 1-step_size
+    #     else:
+    #         factor = 1+ step_size
+   
+    #     for bone in scaled_bones:
+    #         autorig.scale_single_segment(bone, factor)
+    #     print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
 
-    target_hip_shoulder_distance = 0.5
-    
-    current_hip_shoulder_distance = autorig.get_hip_shoulder_distance()
-    print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
-    
-    
-    
-    
-    autorig.resize_segment("spine", .25)
-    autorig.scale_distal_segments("forearm.R", 1.2)
-    autorig.scale_distal_segments("forearm.L", 1.2)
-    autorig.scale_distal_segments("shin.R", 1.2)
-    autorig.scale_distal_segments("shin.L", 1.2)
-    autorig.scale_distal_segments("face", 0.8)
-    autorig.resize_segment("spine", .3)
-    autorig.resize_segment("shoulder.R", 0.25)
+    # autorig.resize_segment("spine", .25)
+    # autorig.scale_distal_segments("forearm.R", 1.2)
+    # autorig.scale_distal_segments("forearm.L", 1.2)
+    # autorig.scale_distal_segments("shin.R", 1.2)
+    # autorig.scale_distal_segments("shin.L", 1.2)
+    # autorig.scale_distal_segments("face", 0.8)
+    # autorig.resize_segment("spine", .3)
+    # autorig.resize_segment("shoulder.R", 0.25)
