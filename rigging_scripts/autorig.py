@@ -230,7 +230,30 @@ class Autorig():
             for bone in scaled_bones:
                 self.scale_single_segment(bone, factor)
             print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
+    
+    def scale_face(self, taret_inner_eye_distance):
+        print(f"About to scale face to targetted inner eye distance of {target_inner_eye_distance}")
+
+        while abs(self.get_inner_eye_distance()-target_inner_eye_distance) > 0.001:
+            inner_eye_distance = self.get_inner_eye_distance()
+            delta = abs(inner_eye_distance - target_inner_eye_distance)
         
+            # take smaller steps as you get closer to target
+            if delta > 0.01:
+                step_size = .1
+            elif delta > .01:
+                step_size = .05
+            else:
+                step_size = .001
+            
+            if inner_eye_distance > target_inner_eye_distance:
+                factor = 1-step_size
+            else:
+                factor = 1+ step_size
+
+            self.scale_distal_segments("face", factor)
+            print(f"Face inner eye distance is {inner_eye_distance}")
+
         
 
 def move_selected(old_location, new_location):
@@ -268,35 +291,21 @@ if __name__ == "__main__":
 
     clear_scene()
     autorig = Autorig("test")
-    # autorig.set_shoulder_width(0.5)
-    # autorig.set_hip_width(0.2)
+    autorig.set_shoulder_width(0.5)
+    autorig.set_hip_width(0.2)
 
-    # target_hip_shoulder_distance = 0.61
-    # autorig.scale_torso(target_hip_shoulder_distance)
+    target_hip_shoulder_distance = 0.61
+    autorig.scale_torso(target_hip_shoulder_distance)
 
-    target_inner_eye_distance = 0.1
-    print(f"About to scale face to targetted inner eye distance of {target_inner_eye_distance}")
-    while abs(autorig.get_inner_eye_distance()-target_inner_eye_distance) > 0.001:
-        inner_eye_distance = autorig.get_inner_eye_distance()
-        delta = abs(inner_eye_distance - target_inner_eye_distance)
-        
-        # take smaller steps as you get closer to target
-        if delta > 0.01:
-            step_size = .1
-        elif delta > .01:
-            step_size = .05
-        else:
-            step_size = .001
-            
-        if inner_eye_distance > target_inner_eye_distance:
-            factor = 1-step_size
-        else:
-            factor = 1+ step_size
+    target_inner_eye_distance = 0.05
+    autorig.scale_face(target_inner_eye_distance)
+    
+    # Need to work on scaling hand
 
-        autorig.scale_distal_segments("face", factor)
-        print(f"Face inner eye distance is {inner_eye_distance}")
-
-    # autorig.resize_segment("spine", .25)
+    # there is nothing holding the MCP joints at a distance. Just scale the whole
+    # hand to hit some target metric, and then resize the phalanges to match the data.    
+    
+    
     # autorig.scale_distal_segments("forearm.R", 1.2)
     # autorig.scale_distal_segments("forearm.L", 1.2)
     # autorig.scale_distal_segments("shin.R", 1.2)
