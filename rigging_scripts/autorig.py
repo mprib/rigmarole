@@ -161,7 +161,19 @@ class Autorig():
             move_selected(initial_global_location, target_global_location)    
         
         self.enable_edit()
-    
+   
+   
+    def get_inner_eye_distance(self):
+        self.enable_edit()
+        
+        r_inner_eye = self.rig.data.edit_bones["lid.B.R"].head
+        l_inner_eye = self.rig.data.edit_bones["lid.B.L"].head
+         
+        inner_eye_distance = (r_inner_eye-l_inner_eye).length
+        print(f"inner eye distance is {inner_eye_distance}")
+        
+        return inner_eye_distance
+        
     def get_hip_shoulder_distance(self):
         """
         used to fit the torso height to the kinematic capture data. 
@@ -256,34 +268,33 @@ if __name__ == "__main__":
 
     clear_scene()
     autorig = Autorig("test")
-    autorig.set_shoulder_width(0.5)
-    autorig.set_hip_width(0.2)
+    # autorig.set_shoulder_width(0.5)
+    # autorig.set_hip_width(0.2)
 
+    # target_hip_shoulder_distance = 0.61
+    # autorig.scale_torso(target_hip_shoulder_distance)
 
-    # from here, going to develop a looping method to set the torso height.     
-    # scaled_bones = ["spine", "spine.001", "spine.002", "spine.003"]
-    target_distance = 0.61
-    autorig.scale_torso(target_distance)
-    # while abs(autorig.get_hip_shoulder_distance() - target_distance) > 0.001:
-    #     current_hip_shoulder_distance = autorig.get_hip_shoulder_distance()
-    #     delta = abs(current_hip_shoulder_distance - target_distance)
+    target_inner_eye_distance = 0.1
+    print(f"About to scale face to targetted inner eye distance of {target_inner_eye_distance}")
+    while abs(autorig.get_inner_eye_distance()-target_inner_eye_distance) > 0.001:
+        inner_eye_distance = autorig.get_inner_eye_distance()
+        delta = abs(inner_eye_distance - target_inner_eye_distance)
         
-    #     # take smaller steps as you get closer to target
-    #     if delta > 0.05:
-    #         step_size = .1
-    #     elif delta > .01:
-    #         step_size = .05
-    #     else:
-    #         step_size = .001
+        # take smaller steps as you get closer to target
+        if delta > 0.01:
+            step_size = .1
+        elif delta > .01:
+            step_size = .05
+        else:
+            step_size = .001
             
-    #     if current_hip_shoulder_distance > target_distance:
-    #         factor = 1-step_size
-    #     else:
-    #         factor = 1+ step_size
-   
-    #     for bone in scaled_bones:
-    #         autorig.scale_single_segment(bone, factor)
-    #     print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
+        if inner_eye_distance > target_inner_eye_distance:
+            factor = 1-step_size
+        else:
+            factor = 1+ step_size
+
+        autorig.scale_distal_segments("face", factor)
+        print(f"Face inner eye distance is {inner_eye_distance}")
 
     # autorig.resize_segment("spine", .25)
     # autorig.scale_distal_segments("forearm.R", 1.2)
