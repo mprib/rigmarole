@@ -193,6 +193,9 @@ class Autorig():
         self.resize_segment(segment_name, new_length)
         
     def scale_torso(self, target_hip_shoulder_distance):
+        """
+        Note that this must be used *after* the shoulder and hip width is set     
+        """
 
         scaled_bones = ["spine", "spine.001", "spine.002", "spine.003"]
         while abs(self.get_hip_shoulder_distance() - target_hip_shoulder_distance) > 0.001:
