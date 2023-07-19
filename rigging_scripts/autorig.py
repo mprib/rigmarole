@@ -99,15 +99,15 @@ class Autorig():
     
         # find out where the tail would be if the segment were longer
         old_location = copy.copy(target_segment.tail) 
-        print(f"Old location of target segment tail is {old_location}")  
+        # print(f"Old location of target segment tail is {old_location}")  
         original_length = target_segment.length
-        print(f"Old segment length is {target_segment.length}")
+        # print(f"Old segment length is {target_segment.length}")
 
         target_segment.length = new_length
         new_location = copy.copy(target_segment.tail)
 
         # restore the segment to its original length 
-        print(f"After scaling of distal segments, target segment tail is now at {new_location}")
+        # print(f"After scaling of distal segments, target segment tail is now at {new_location}")
         target_segment.length = original_length
         self.select_children(target_segment)
 
@@ -162,7 +162,22 @@ class Autorig():
         
         self.enable_edit()
    
-   
+    def get_shoulder_inner_eye_distance(self):
+        
+        r_inner_eye = self.rig.data.edit_bones["lid.B.R"].head
+        l_inner_eye = self.rig.data.edit_bones["lid.B.L"].head
+
+        r_shoulder = self.rig.data.edit_bones["upper_arm.R"].head
+        l_shoulder = self.rig.data.edit_bones["upper_arm.L"].head
+
+        r_dist = (r_shoulder - r_inner_eye).length
+        l_dist = (l_shoulder - l_inner_eye).length
+
+        # Compute the mean distance
+        mean_distance = (r_dist + l_dist) / 2
+
+        return mean_distance
+        
     def get_inner_eye_distance(self):
         self.enable_edit()
         
@@ -231,7 +246,7 @@ class Autorig():
                 self.scale_single_segment(bone, factor)
             print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
     
-    def scale_face(self, taret_inner_eye_distance):
+    def scale_face(self, target_inner_eye_distance):
         print(f"About to scale face to targetted inner eye distance of {target_inner_eye_distance}")
 
         while abs(self.get_inner_eye_distance()-target_inner_eye_distance) > 0.001:
@@ -263,7 +278,7 @@ def move_selected(old_location, new_location):
         new_location[1]-old_location[1], 
         new_location[2]-old_location[2]) 
     
-    print(f"The total amount translated is {translation}")
+    # print(f"The total amount translated is {translation}")
     bpy.ops.transform.translate(value=translation, orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'INCREMENT'}, use_snap_project=False, snap_target='CLOSEST', use_snap_self=False, use_snap_edit=False, use_snap_nonedit=False, use_snap_selectable=False)
 
 
@@ -297,9 +312,50 @@ if __name__ == "__main__":
     target_hip_shoulder_distance = 0.61
     autorig.scale_torso(target_hip_shoulder_distance)
 
-    target_inner_eye_distance = 0.05
+    target_inner_eye_distance = 0.04
     autorig.scale_face(target_inner_eye_distance)
+
+    target_shoulder_inner_eye_distance = 0.35
+
+    scaled_bones = ["spine.004", "spine.005", "spine.006"]
+    print(f"Beginning process of scaling {scaled_bones}")
+    cutoff_delta = 0.001 # value of difference between actual and target in  meters at which loop terminates because it's close enough
+    loop_count = 0
+
+    while True:
+        current_distance = autorig.get_shoulder_inner_eye_distance()
+        print(f"Current Shoulder-Eye distance is {current_distance}")
+        delta = abs(current_distance - target_shoulder_inner_eye_distance)
+        print(f"Current delta is {delta}")
+        if delta < cutoff_delta:
+            print("Breaking out of loop. Target close enough")
+            break
+        # take smaller steps as you get closer to target
+        if delta > 0.05:
+            step_size = .1
+        elif delta > .01:
+            step_size = .05
+        elif delta > .001:
+            step_size = .05
+        else:
+            step_size = .01
+        
+        # it's bouncing around too much and not converging. Force smaller steps as iterations proceed
+        if loop_count > 10:
+            step_size = step_size/loop_count
+         
+        if current_distance > target_shoulder_inner_eye_distance:
+            factor = 1-step_size
+        else:
+            factor = 1+ step_size
+   
+        for bone in scaled_bones:
+            autorig.scale_single_segment(bone, factor)
+        loop_count+=1
     
+    
+    # autorig.resize_segment("thigh.R", .56)    
+    # autorig.resize_segment("shin.R", .46)    
     # Need to work on scaling hand
 
     # there is nothing holding the MCP joints at a distance. Just scale the whole
