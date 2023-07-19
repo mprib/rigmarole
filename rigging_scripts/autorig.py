@@ -162,55 +162,70 @@ class Autorig():
         
         self.enable_edit()
    
-    def get_shoulder_inner_eye_distance(self):
         
-        r_inner_eye = self.rig.data.edit_bones["lid.B.R"].head
-        l_inner_eye = self.rig.data.edit_bones["lid.B.L"].head
 
-        r_shoulder = self.rig.data.edit_bones["upper_arm.R"].head
-        l_shoulder = self.rig.data.edit_bones["upper_arm.L"].head
-
-        r_dist = (r_shoulder - r_inner_eye).length
-        l_dist = (l_shoulder - l_inner_eye).length
-
-        # Compute the mean distance
-        mean_distance = (r_dist + l_dist) / 2
-
-        return mean_distance
+    def scale_group_to_target(self, current_distance_function, target_distance, scaling_function, cutoff_delta = 0.001):
         
-    def get_inner_eye_distance(self):
-        self.enable_edit()
+        loop_count = 0
+
+        while True:
+            current_distance = current_distance_function()
+            
+            print(f"Current distance is {current_distance}")
+            delta = abs(current_distance - target_distance)
+            print(f"Current delta is {delta}")
+            if delta < cutoff_delta:
+                print("Breaking out of loop. Target close enough")
+                break
+            # take smaller steps as you get closer to target
+            if delta > 0.05:
+                step_size = .1
+            elif delta > .01:
+                step_size = .05
+            elif delta > .001:
+                step_size = .05
+            else:
+                step_size = .01
         
-        r_inner_eye = self.rig.data.edit_bones["lid.B.R"].head
-        l_inner_eye = self.rig.data.edit_bones["lid.B.L"].head
+            # it's bouncing around too much and not converging. Force smaller steps as iterations proceed
+            if loop_count > 10:
+                step_size = step_size/loop_count
          
-        inner_eye_distance = (r_inner_eye-l_inner_eye).length
-        print(f"inner eye distance is {inner_eye_distance}")
+            if current_distance > target_distance:
+                factor = 1-step_size
+            else:
+                factor = 1+ step_size
+  
+            scaling_function(factor)
+            
+            loop_count+=1
         
-        return inner_eye_distance
+    def scale_neck(self,target_distance):
         
-    def get_hip_shoulder_distance(self):
-        """
-        used to fit the torso height to the kinematic capture data. 
-        For this, will just plan to work on averages and symmetricly.
-        """ 
-        self.enable_edit()
-           
-        r_hip = self.rig.data.edit_bones["thigh.R"].head
-        l_hip = self.rig.data.edit_bones["thigh.L"].head
+        def get_shoulder_inner_eye_distance():
+        
+            r_inner_eye = self.rig.data.edit_bones["lid.B.R"].head
+            l_inner_eye = self.rig.data.edit_bones["lid.B.L"].head
 
-        r_shoulder = self.rig.data.edit_bones["upper_arm.R"].head
-        l_shoulder = self.rig.data.edit_bones["upper_arm.L"].head
+            r_shoulder = self.rig.data.edit_bones["upper_arm.R"].head
+            l_shoulder = self.rig.data.edit_bones["upper_arm.L"].head
 
-        # Compute the distances between the corresponding hip and shoulder
-        r_dist = (r_shoulder - r_hip).length
-        l_dist = (l_shoulder - l_hip).length
+            r_dist = (r_shoulder - r_inner_eye).length
+            l_dist = (l_shoulder - l_inner_eye).length
 
-        # Compute the mean distance
-        mean_distance = (r_dist + l_dist) / 2
+            # Compute the mean distance
+            mean_distance = (r_dist + l_dist) / 2
 
-        return mean_distance
+            return mean_distance
+        
+        def scale_neck_by_factor(factor):
+            scaled_bones = ["spine.004", "spine.005", "spine.006"]
+       
+            for bone in scaled_bones:
+                self.scale_single_segment(bone, factor)
 
+        self.scale_group_to_target(get_shoulder_inner_eye_distance, target_distance,scale_neck_by_factor)
+        
     def scale_single_segment(self, segment_name, factor):
         self.enable_edit()
         
@@ -224,52 +239,51 @@ class Autorig():
         Note that this must be used *after* the shoulder and hip width is set     
         """
 
-        scaled_bones = ["spine", "spine.001", "spine.002", "spine.003"]
-        while abs(self.get_hip_shoulder_distance() - target_hip_shoulder_distance) > 0.001:
-            current_hip_shoulder_distance = self.get_hip_shoulder_distance()
-            delta = abs(current_hip_shoulder_distance - target_hip_shoulder_distance)
-        
-            # take smaller steps as you get closer to target
-            if delta > 0.05:
-                step_size = .1
-            elif delta > .01:
-                step_size = .05
-            else:
-                step_size = .001
+        def shoulder_hip_distance():
+            self.enable_edit()
+           
+            r_hip = self.rig.data.edit_bones["thigh.R"].head
+            l_hip = self.rig.data.edit_bones["thigh.L"].head
+
+            r_shoulder = self.rig.data.edit_bones["upper_arm.R"].head
+            l_shoulder = self.rig.data.edit_bones["upper_arm.L"].head
+
+            # Compute the distances between the corresponding hip and shoulder
+            r_dist = (r_shoulder - r_hip).length
+            l_dist = (l_shoulder - l_hip).length
+
+            # Compute the mean distance
+            mean_distance = (r_dist + l_dist) / 2
+
+            return mean_distance
             
-            if current_hip_shoulder_distance > target_hip_shoulder_distance:
-                factor = 1-step_size
-            else:
-                factor = 1+ step_size
-   
+            
+        def scale_spine_bones_by_factor(factor):
+            scaled_bones = ["spine", "spine.001", "spine.002", "spine.003"]
             for bone in scaled_bones:
                 self.scale_single_segment(bone, factor)
-            print(f"Current Hip-Shoulder distance is {current_hip_shoulder_distance}")
-    
+   
+        self.scale_group_to_target(shoulder_hip_distance, target_hip_shoulder_distance,scale_spine_bones_by_factor) 
+
     def scale_face(self, target_inner_eye_distance):
         print(f"About to scale face to targetted inner eye distance of {target_inner_eye_distance}")
 
-        while abs(self.get_inner_eye_distance()-target_inner_eye_distance) > 0.001:
-            inner_eye_distance = self.get_inner_eye_distance()
-            delta = abs(inner_eye_distance - target_inner_eye_distance)
+        def inner_eye_distance():
+            self.enable_edit()
         
-            # take smaller steps as you get closer to target
-            if delta > 0.01:
-                step_size = .1
-            elif delta > .01:
-                step_size = .05
-            else:
-                step_size = .001
-            
-            if inner_eye_distance > target_inner_eye_distance:
-                factor = 1-step_size
-            else:
-                factor = 1+ step_size
+            r_inner_eye = self.rig.data.edit_bones["lid.B.R"].head
+            l_inner_eye = self.rig.data.edit_bones["lid.B.L"].head
+         
+            inner_eye_distance = (r_inner_eye-l_inner_eye).length
+            print(f"inner eye distance is {inner_eye_distance}")
+        
+            return inner_eye_distance
 
+        
+        def scale_face_by_factor(factor):
             self.scale_distal_segments("face", factor)
-            print(f"Face inner eye distance is {inner_eye_distance}")
 
-        
+        self.scale_group_to_target(inner_eye_distance, target_inner_eye_distance,scale_face_by_factor) 
 
 def move_selected(old_location, new_location):
     
@@ -316,46 +330,8 @@ if __name__ == "__main__":
     autorig.scale_face(target_inner_eye_distance)
 
     target_shoulder_inner_eye_distance = 0.35
+    autorig.scale_neck(target_shoulder_inner_eye_distance)
 
-    scaled_bones = ["spine.004", "spine.005", "spine.006"]
-    print(f"Beginning process of scaling {scaled_bones}")
-    cutoff_delta = 0.001 # value of difference between actual and target in  meters at which loop terminates because it's close enough
-    loop_count = 0
-
-    while True:
-        current_distance = autorig.get_shoulder_inner_eye_distance()
-        print(f"Current Shoulder-Eye distance is {current_distance}")
-        delta = abs(current_distance - target_shoulder_inner_eye_distance)
-        print(f"Current delta is {delta}")
-        if delta < cutoff_delta:
-            print("Breaking out of loop. Target close enough")
-            break
-        # take smaller steps as you get closer to target
-        if delta > 0.05:
-            step_size = .1
-        elif delta > .01:
-            step_size = .05
-        elif delta > .001:
-            step_size = .05
-        else:
-            step_size = .01
-        
-        # it's bouncing around too much and not converging. Force smaller steps as iterations proceed
-        if loop_count > 10:
-            step_size = step_size/loop_count
-         
-        if current_distance > target_shoulder_inner_eye_distance:
-            factor = 1-step_size
-        else:
-            factor = 1+ step_size
-   
-        for bone in scaled_bones:
-            autorig.scale_single_segment(bone, factor)
-        loop_count+=1
-    
-    
-    # autorig.resize_segment("thigh.R", .56)    
-    # autorig.resize_segment("shin.R", .46)    
     # Need to work on scaling hand
 
     # there is nothing holding the MCP joints at a distance. Just scale the whole
