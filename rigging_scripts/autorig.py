@@ -70,9 +70,6 @@ class Autorig():
 
     def scale_distal_segments(self, proximal_segment_name, scale_factor):
 
-        # self.rig.select_set(True)
-        # bpy.ops.object.mode_set(mode='EDIT')
-        # bpy.ops.armature.select_all(action='DESELECT')
         self.enable_edit()
 
         target_segment = self.rig.data.edit_bones[proximal_segment_name]
