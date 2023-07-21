@@ -1,3 +1,44 @@
+"""
+
+This following will create a blender metarig that scales to meet the specification
+outlined in a json file that contains the following:
+
+Single Value (trunk params)
+Shoulder_Width:
+Hip_Width:
+Hip_Shoulder_Distance:
+Inner_Eye_Distance:
+Shoulder_Inner_Eye_Distance:
+
+Bilateral (should be Left_ and Right_ versions)
+Palm_Width: measured from MCP2 to MCP4
+Foot_Length:
+Upper_Arm_Length
+Forearm_Length
+Wrist_to_MCP1
+Wrist_to_MCP2
+Wrist_to_MCP3
+Wrist_to_MCP4
+Wrist_to_MCP5
+Prox_Phalanx_1_Length
+Prox_Phalanx_2_Length
+Prox_Phalanx_3_Length
+Prox_Phalanx_4_Length
+Prox_Phalanx_5_Length
+Mid_Phalanx_2_Length
+Mid_Phalanx_3_Length
+Mid_Phalanx_4_Length
+Mid_Phalanx_5_Length
+Dist_Phalanx_1_Length
+Dist_Phalanx_2_Length
+Dist_Phalanx_3_Length
+Dist_Phalanx_4_Length
+Dist_Phalanx_5_Length
+Thigh_Length
+Shin_Length
+
+"""
+
 from pathlib import Path
 import os
 import toml
@@ -8,7 +49,7 @@ import math
 import copy
 
 
-class Autorig():
+class HolisticAutorig():
     
     def __init__(self, name:str):
         # place in a new metahuman rig
@@ -400,11 +441,11 @@ def clear_scene():
 if __name__ == "__main__":
 
     clear_scene()
-    autorig = Autorig("test")
+    autorig = HolisticAutorig("test")
     autorig.set_shoulder_width(0.5)
     autorig.set_hip_width(0.25)
 
-    target_hip_shoulder_distance = 0.61
+    target_hip_shoulder_distance = 0.71
     autorig.scale_torso(target_hip_shoulder_distance)
 
     target_inner_eye_distance = 0.05
