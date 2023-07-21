@@ -174,19 +174,12 @@ class Autorig():
             if delta < cutoff_delta:
                 print("Breaking out of loop. Target close enough")
                 break
-            # take smaller steps as you get closer to target
-            if delta > 0.05:
-                step_size = .1
-            elif delta > .01:
-                step_size = .05
-            elif delta > .001:
-                step_size = .05
-            else:
-                step_size = .01
-        
-            # it's bouncing around too much and not converging. Force smaller steps as iterations proceed
+       
+            step_size = (delta/current_distance) 
+
+            # if it's bouncing around too much and not converging. Force smaller steps as iterations proceed
             if loop_count > 10:
-                step_size = step_size/loop_count
+                step_size = step_size * (1000-loop_count)/1000
          
             if current_distance > target_distance:
                 factor = 1-step_size
@@ -196,6 +189,10 @@ class Autorig():
             scaling_function(factor)
             
             loop_count+=1
+           
+            # for testing purposes to figure out what is going on ... 
+            if loop_count > 200:
+                break
         
     def scale_neck(self,target_distance):
         
@@ -282,6 +279,72 @@ class Autorig():
 
         self.scale_group_to_target(inner_eye_distance, target_inner_eye_distance,scale_face_by_factor) 
 
+    def scale_palm_width(self,target_hand_width, side):
+        
+        def hand_width():
+            self.enable_edit()
+            
+            mcp_head_2 = self.rig.data.edit_bones[f"palm.01.{side}"].tail
+            mcp_head_4 = self.rig.data.edit_bones[f"palm.04.{side}"].tail
+
+            mcp_distance = (mcp_head_2-mcp_head_4).length
+            return mcp_distance
+        
+        def scale_hand_by_factor(factor):
+            self.scale_distal_segments(f"forearm.{side}", factor)
+
+        self.scale_group_to_target(hand_width, target_hand_width,scale_hand_by_factor)
+        
+    def scale_wrist_to_segment_tail(self, target_segment_name,side:str, target_length): 
+        """
+        The hand contains major landmarks (e.g. heads of metacarpals) that don't have an 
+        analogue in the holistic mediapipe output. Need to scale single segment to fit an
+        overarching total length from wrist to knuckle
+        
+        
+        target_segment: name of bone in the hand the scale. Will be palm.0# or thumb.01
+        side: 'R' or 'L'
+        """
+        # note this is in the context of metarig, not anatomy
+        
+        segment_name_w_side = f"{target_segment_name}.{side}"
+
+        def wrist_to_segment_tail_length():
+            wrist = self.rig.data.edit_bones[f"hand.{side}"].head
+            print(f"wrist: {wrist}")
+            mcp = self.rig.data.edit_bones[segment_name_w_side].tail
+            print(f"segment tail: {mcp}")
+
+            distance = (mcp-wrist).length
+
+            return distance 
+
+        def scale_segment_by_factor(factor):
+            segment = self.rig.data.edit_bones[segment_name_w_side]
+            print(f"Current length of segment is {segment.length}")
+            new_length = segment.length * factor
+            print(f"New target length of segment to reflect factor is {new_length}")
+            self.resize_segment(segment_name_w_side, new_length)
+            print(f"Following resize, length is {segment.length}")
+        
+        self.scale_group_to_target(wrist_to_segment_tail_length, target_length,scale_segment_by_factor)
+    
+    def scale_foot(self, side:str, target_length):
+        
+        def foot_length():
+            self.enable_edit()
+        
+            heel = self.rig.data.edit_bones[f"heel.02.{side}"].head
+            toe = self.rig.data.edit_bones[f"toe.{side}"].tail
+
+            distance = (heel-toe).length
+            return distance
+        
+        def scale_foot_by_factor(factor):
+            self.scale_distal_segments(f"shin.{side}", factor)
+
+        self.scale_group_to_target(foot_length, target_length,scale_foot_by_factor)
+
 def move_selected(old_location, new_location):
     
     translation = (
@@ -318,27 +381,35 @@ if __name__ == "__main__":
     clear_scene()
     autorig = Autorig("test")
     autorig.set_shoulder_width(0.5)
-    autorig.set_hip_width(0.2)
+    autorig.set_hip_width(0.25)
 
     target_hip_shoulder_distance = 0.61
     autorig.scale_torso(target_hip_shoulder_distance)
 
-    target_inner_eye_distance = 0.04
+    target_inner_eye_distance = 0.05
     autorig.scale_face(target_inner_eye_distance)
 
     target_shoulder_inner_eye_distance = 0.35
     autorig.scale_neck(target_shoulder_inner_eye_distance)
 
     # Need to work on scaling hand
+    target_palm_width = 0.06 
+    autorig.scale_palm_width(target_palm_width,"R")
+    autorig.scale_wrist_to_segment_tail("thumb.01", "R", 0.07)
 
+    autorig.scale_foot("R", 0.25)
+    autorig.scale_foot("L", 0.35)
+    # Note that in scaling from a model spec file, the palm width and wrist to segment
+    # scaling will likely need to be implemented multiple times in alternation to converge on a stable
+    # configuration that approximates the target
+    
+    
+    
     # there is nothing holding the MCP joints at a distance. Just scale the whole
     # hand to hit some target metric, and then resize the phalanges to match the data.    
     
-    
-    # autorig.scale_distal_segments("forearm.R", 1.2)
-    # autorig.scale_distal_segments("forearm.L", 1.2)
+    autorig.resize_segment("forearm.R", .3)
+    autorig.resize_segment("forearm.L", .3)
+
     # autorig.scale_distal_segments("shin.R", 1.2)
     # autorig.scale_distal_segments("shin.L", 1.2)
-    # autorig.scale_distal_segments("face", 0.8)
-    # autorig.resize_segment("spine", .3)
-    # autorig.resize_segment("shoulder.R", 0.25)
