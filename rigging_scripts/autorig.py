@@ -116,6 +116,11 @@ class Autorig():
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.armature.select_all(action='DESELECT')
 
+    def enable_object(self):
+        self.rig.select_set(True)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        # bpy.ops.armature.select_all(action='DESELECT')
+
     def set_hip_width(self, width):
         self.set_limb_root_width("thigh", "pelvis", width)
     
@@ -345,6 +350,22 @@ class Autorig():
 
         self.scale_group_to_target(foot_length, target_length,scale_foot_by_factor)
 
+    def shift_feet_to_floor(self):
+        
+        right_heel_head = self.rig.data.edit_bones["heel.02.R"].head
+        left_heel_head = self.rig.data.edit_bones["heel.02.L"].head
+
+        right_heel_global = self.rig.matrix_world @ right_heel_head
+        left_heel_global = self.rig.matrix_world @ left_heel_head
+    
+        right_depth = right_heel_global[2]
+        left_depth = left_heel_global[2]
+    
+        mean_depth = (right_depth + left_depth)/2
+        self.enable_object()
+    
+        bpy.ops.transform.translate(value=(0,0,-mean_depth)) 
+
 def move_selected(old_location, new_location):
     
     translation = (
@@ -397,13 +418,13 @@ if __name__ == "__main__":
     autorig.scale_palm_width(target_palm_width,"R")
     autorig.scale_wrist_to_segment_tail("thumb.01", "R", 0.07)
 
-    autorig.scale_foot("R", 0.25)
-    autorig.scale_foot("L", 0.35)
+    autorig.scale_foot("R", 0.35)
+    autorig.scale_foot("L", 0.55)
     # Note that in scaling from a model spec file, the palm width and wrist to segment
     # scaling will likely need to be implemented multiple times in alternation to converge on a stable
     # configuration that approximates the target
-    
-    
+
+    autorig.shift_feet_to_floor()
     
     # there is nothing holding the MCP joints at a distance. Just scale the whole
     # hand to hit some target metric, and then resize the phalanges to match the data.    
