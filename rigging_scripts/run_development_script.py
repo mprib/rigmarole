@@ -31,6 +31,6 @@ def run_script(filename):
 # filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\add_ik.py"
 # run_script(filename)
 
-filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\on_plane.py"
+filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\autorig.py"
 run_script(filename)
  
