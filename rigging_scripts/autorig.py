@@ -49,7 +49,7 @@ import math
 import copy
 
 
-class HolisticAutorig():
+class HolisticRigmarole():
     
     def __init__(self, name:str):
         # place in a new metahuman rig
@@ -414,8 +414,7 @@ def move_selected(old_location, new_location):
         new_location[1]-old_location[1], 
         new_location[2]-old_location[2]) 
     
-    # print(f"The total amount translated is {translation}")
-    bpy.ops.transform.translate(value=translation, orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'INCREMENT'}, use_snap_project=False, snap_target='CLOSEST', use_snap_self=False, use_snap_edit=False, use_snap_nonedit=False, use_snap_selectable=False)
+    bpy.ops.transform.translate(value=translation)
 
 
 def scale_selected(factor):
@@ -441,7 +440,7 @@ def clear_scene():
 if __name__ == "__main__":
 
     clear_scene()
-    autorig = HolisticAutorig("test")
+    autorig = HolisticRigmarole("test")
     autorig.set_shoulder_width(0.5)
     autorig.set_hip_width(0.25)
 
@@ -471,7 +470,7 @@ if __name__ == "__main__":
     # hand to hit some target metric, and then resize the phalanges to match the data.    
     
     autorig.resize_segment("forearm.R", .3)
-    autorig.resize_segment("forearm.L", .3)
+    autorig.resize_segment("forearm.L", .4)
 
     # autorig.scale_distal_segments("shin.R", 1.2)
     # autorig.scale_distal_segments("shin.L", 1.2)
