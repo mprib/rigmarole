@@ -125,7 +125,7 @@ def get_human_rig():
 
     return metahuman
 
-def create_anchor(rig_anchors, track_to_anchor):
+def create_anchor(rig_anchors, track_to_anchor, empty_data):
     """
     create an anchor empty to parent the rig to. 
     
@@ -136,8 +136,6 @@ def create_anchor(rig_anchors, track_to_anchor):
     
     """
    
-    # rig_anchors = ["left_hip", "right_hip"] 
-    # create a new anchor
     bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
     bpy.data.objects['Camera'].select_set(True)
 
@@ -151,7 +149,7 @@ def create_anchor(rig_anchors, track_to_anchor):
     empty.name = "anchor"
 
     ### setting human rig location based on rig_anchor points
-    for frame in data:
+    for frame in empty_data:
         sync_index = int(frame["sync_index"])
     
         rig_anchor_locations = []
@@ -177,60 +175,62 @@ def create_anchor(rig_anchors, track_to_anchor):
         bpy.context.scene.frame_set(sync_index)  # update the current frame
 
 
-def set_rig_to_anchor(rig):
+def set_rig_to_anchor(model):
     # Get the rig and anchor
     # rig = bpy.data.objects['human_rig']
     anchor = bpy.data.objects['anchor']
     # Create a new copy location constraint
-    constraint = rig.constraints.new('COPY_LOCATION')
+    constraint = model.rig.constraints.new('COPY_LOCATION')
 
     # Set the target of the constraint to the anchor
     constraint.target = anchor
 
     # If you want to copy rotation as well, you can create a COPY_ROTATION constraint in the same way:
-    rotation_constraint = rig.constraints.new('COPY_ROTATION')
+    rotation_constraint = model.rig.constraints.new('COPY_ROTATION')
     rotation_constraint.target = anchor
 
 ##############################################
 
-processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam_A\recording_4\HOLISTIC_OPENSIM")
+if __name__ == "__main__":
 
-config_path = Path(processed_folder, "config.toml")
-config_dict = toml.load(config_path)
+    processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam_A\recording_4\HOLISTIC_OPENSIM")
 
-fps = config_dict["fps_recording"]
+    config_path = Path(processed_folder, "config.toml")
+    config_dict = toml.load(config_path)
 
-trajectory_data_path = Path(processed_folder, "xyz_HOLISTIC_OPENSIM_labelled.csv")
+    fps = config_dict["fps_recording"]
 
-clear_scene()
+    trajectory_data_path = Path(processed_folder, "xyz_HOLISTIC_OPENSIM_labelled.csv")
 
-# load in trajectory data
-# Create an empty list to hold the data
-data = []
-print(f"beginning to load csv data at {time.time()}")
-with open(trajectory_data_path, 'r') as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        data.append(row)
-print(f"Completing load of csv data at {time.time()}")
+    # clear_scene()
 
-import_empties(data)
+    # load in trajectory data
+    # Create an empty list to hold the data
+    data = []
+    print(f"beginning to load csv data at {time.time()}")
+    with open(trajectory_data_path, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            data.append(row)
+    print(f"Completing load of csv data at {time.time()}")
 
-
-print("getting human rig")
-metahuman = get_human_rig()
-
-print("Creating anchor")
+    import_empties(data)
 
 
-rig_anchors = ["right_hip", "left_hip"]
-track_to_anchor = rig_anchors[0]
+    # print("getting human rig")
+    # metahuman = get_human_rig()
 
-create_anchor(rig_anchors,track_to_anchor)
+    # print("Creating anchor")
 
-print("setting rig to anchor")
-anchor_name = "anchor"
-set_rig_to_anchor(metahuman)
+
+    # rig_anchors = ["right_hip", "left_hip"]
+    # track_to_anchor = rig_anchors[0]
+
+    # create_anchor(rig_anchors,track_to_anchor)
+
+    # print("setting rig to anchor")
+    # anchor_name = "anchor"
+    # set_rig_to_anchor(metahuman)
 
 
 
