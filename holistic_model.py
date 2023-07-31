@@ -48,7 +48,9 @@ import math
 import copy
 import json
 
-class HolisticRigmarole():
+import os
+
+class HolisticModel():
     
     def __init__(self, name:str):
         # place in a new metahuman rig
@@ -483,7 +485,7 @@ if __name__ == "__main__":
 
     clear_scene()
     scale_json = r"C:\Users\Mac Prible\repos\rigmarole\sample\metarig_config_HOLISTIC_OPENSIM.json"
-    rig = HolisticRigmarole("test")
+    rig = HolisticModel("test")
     rig.scale_to_config(scale_json)
 
     
