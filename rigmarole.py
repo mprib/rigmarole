@@ -517,6 +517,8 @@ if __name__ == "__main__":
             rig.resize_segment(f"f_{finger}.02.{side}", scale[f"Mid_Phalanx_{number}"]) 
             rig.resize_segment(f"f_{finger}.03.{side}", scale[f"Dist_Phalanx_{number}"]) 
 
+    # somewhere around here I think I may need to insert a new method that adjusts the ankle height 
+    # to some target value
     rig.shift_feet_to_floor()
 
             
