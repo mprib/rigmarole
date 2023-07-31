@@ -41,13 +41,12 @@ Shin_Length
 
 from pathlib import Path
 import os
-import toml
 import time
 import csv
 import bpy
 import math
 import copy
-
+import json
 
 class HolisticRigmarole():
     
@@ -440,37 +439,84 @@ def clear_scene():
 if __name__ == "__main__":
 
     clear_scene()
-    autorig = HolisticRigmarole("test")
-    autorig.set_shoulder_width(0.5)
-    autorig.set_hip_width(0.25)
+    # autorig = HolisticRigmarole("test")
+    # autorig.set_shoulder_width(0.5)
+    # autorig.set_hip_width(0.25)
 
-    target_hip_shoulder_distance = 0.71
-    autorig.scale_torso(target_hip_shoulder_distance)
+    # target_hip_shoulder_distance = 0.71
+    # autorig.scale_torso(target_hip_shoulder_distance)
 
-    target_inner_eye_distance = 0.05
-    autorig.scale_face(target_inner_eye_distance)
+    # target_inner_eye_distance = 0.05
+    # autorig.scale_face(target_inner_eye_distance)
 
-    target_shoulder_inner_eye_distance = 0.35
-    autorig.scale_neck(target_shoulder_inner_eye_distance)
+    # target_shoulder_inner_eye_distance = 0.35
+    # autorig.scale_neck(target_shoulder_inner_eye_distance)
 
-    # Need to work on scaling hand
-    target_palm_width = 0.06 
-    autorig.scale_palm_width(target_palm_width,"R")
-    autorig.scale_wrist_to_segment_tail("thumb.01", "R", 0.07)
+    # # Need to work on scaling hand
+    # target_palm_width = 0.06 
+    # autorig.scale_palm_width(target_palm_width,"R")
+    # autorig.scale_wrist_to_segment_tail("thumb.01", "R", 0.07)
 
-    autorig.scale_foot("R", 0.35)
-    autorig.scale_foot("L", 0.55)
-    # Note that in scaling from a model spec file, the palm width and wrist to segment
-    # scaling will likely need to be implemented multiple times in alternation to converge on a stable
-    # configuration that approximates the target
+    # autorig.scale_foot("R", 0.35)
+    # autorig.scale_foot("L", 0.55)
+    # # Note that in scaling from a model spec file, the palm width and wrist to segment
+    # # scaling will likely need to be implemented multiple times in alternation to converge on a stable
+    # # configuration that approximates the target
 
-    autorig.shift_feet_to_floor()
+    # autorig.shift_feet_to_floor()
     
-    # there is nothing holding the MCP joints at a distance. Just scale the whole
-    # hand to hit some target metric, and then resize the phalanges to match the data.    
+    # # there is nothing holding the MCP joints at a distance. Just scale the whole
+    # # hand to hit some target metric, and then resize the phalanges to match the data.    
     
-    autorig.resize_segment("forearm.R", .3)
-    autorig.resize_segment("forearm.L", .4)
+    # autorig.resize_segment("forearm.R", .3)
+    # autorig.resize_segment("forearm.L", .4)
 
-    # autorig.scale_distal_segments("shin.R", 1.2)
+    # # autorig.scale_distal_segments("shin.R", 1.2)
     # autorig.scale_distal_segments("shin.L", 1.2)
+
+    scale_json = r"C:\Users\Mac Prible\repos\rigmarole\sample\metarig_config_HOLISTIC_OPENSIM.json"
+
+    with open(scale_json,"r") as f:
+        scale = json.load(f)
+
+    # %%
+
+    rig = HolisticRigmarole("test")
+
+    rig.set_shoulder_width(scale["Shoulder_Width"])
+    rig.set_hip_width(scale["Hip_Width"])
+    rig.scale_torso(scale["Hip_Shoulder_Distance"])
+    rig.scale_face(scale["Inner_Eye_Distance"])
+    rig.scale_neck(scale["Shoulder_Inner_Eye_Distance"])
+
+    for side in ["R", "L"]:
+        rig.resize_segment(f"upper_arm.{side}", scale["Upper_Arm"])
+        rig.resize_segment(f"forearm.{side}", scale["Forearm"])
+        rig.resize_segment(f"thigh.{side}", scale["Thigh_Length"])
+        rig.resize_segment(f"shin.{side}", scale["Shin_Length"])
+        rig.scale_foot(side, scale["Foot"])
+
+        # scale the palm...because width and length get impacted by each other, dial in with a few iterations
+        # choosing 3 here just as a guess that these things will not get distorted *that* much by the scaling
+        # in an alternate dimension so will quickly stabilize
+        for _ in range(0,3):
+            rig.scale_palm_width(scale["Palm"], side)
+            rig.scale_wrist_to_segment_tail("thumb.01", side, scale["Wrist_to_MCP1"] )
+            rig.scale_wrist_to_segment_tail("palm.01", side, scale["Wrist_to_MCP2"] )
+            rig.scale_wrist_to_segment_tail("palm.02", side, scale["Wrist_to_MCP3"] )
+            rig.scale_wrist_to_segment_tail("palm.03", side, scale["Wrist_to_MCP4"] )
+            rig.scale_wrist_to_segment_tail("palm.04", side, scale["Wrist_to_MCP5"] )
+        
+        # thumb needs to be handled seperately 
+        rig.resize_segment(f"thumb.02.{side}", scale["Prox_Phalanx_1"]) 
+        rig.resize_segment(f"thumb.03.{side}", scale["Dist_Phalanx_1"]) 
+
+        finger_numbers = {"index":2, "middle":3, "ring":4, "pinky":5}
+        for finger, number in finger_numbers.items():
+            rig.resize_segment(f"f_{finger}.01.{side}", scale[f"Prox_Phalanx_{number}"]) 
+            rig.resize_segment(f"f_{finger}.02.{side}", scale[f"Mid_Phalanx_{number}"]) 
+            rig.resize_segment(f"f_{finger}.03.{side}", scale[f"Dist_Phalanx_{number}"]) 
+
+    rig.shift_feet_to_floor()
+
+            
