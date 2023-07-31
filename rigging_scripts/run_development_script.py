@@ -7,8 +7,6 @@ import sys
 from pathlib import Path
 # Use your own script name here:
 
-
-
 def run_script(filename):
     
     filepath = os.path.join(os.path.dirname(bpy.data.filepath), filename)
@@ -16,20 +14,6 @@ def run_script(filename):
     with open(filepath, 'rb') as file:
         exec(compile(file.read(), filepath, 'exec'), global_namespace)  
 
-
-# filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\import_rig.py"
-# run_script(filename)
-
-# scaling_frame = 75
-
-# bpy.context.scene.frame_set(scaling_frame)
-
-# filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\scale_rig.py"
-# run_script(filename)
-
-
-# filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\add_ik.py"
-# run_script(filename)
 
 filename = r"C:\Users\Mac Prible\repos\learn_blender\rigging_scripts\autorig.py"
 run_script(filename)
