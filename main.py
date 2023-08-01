@@ -70,31 +70,71 @@ bone_targets = {
     "shin.L":"left_ankle",
     "foot.R":"right_foot_index",
     "foot.L":"left_foot_index",
-    "f_pinky.03.R":"right_pinky_tip",
-    "f_pinky.03.L":"left_pinky_tip",
 
+    "f_pinky.03.R":"right_pinky_tip",
     "f_pinky.02.R":"right_pinky_DIP",
     "f_pinky.01.R":"right_pinky_PIP",
-    "palm.03.R":"right_pinky_MCP",
-    
+    "palm.04.R":"right_pinky_MCP",
+   
+    "f_pinky.03.L":"left_pinky_tip",
     "f_pinky.02.L":"left_pinky_DIP",
     "f_pinky.01.L":"left_pinky_PIP",
-    "palm.03.L":"left_pinky_MCP",
+    "palm.04.L":"left_pinky_MCP",
 
     "f_ring.03.R":"right_ring_finger_tip",
+    "f_ring.02.R":"right_ring_finger_DIP",
+    "f_ring.01.R":"right_ring_finger_PIP",
+    "palm.03.R":"right_ring_finger_MCP",
+
     "f_ring.03.L":"left_ring_finger_tip",
-    "f_index.03.L":"left_index_finger_tip",
-    "f_index.03.R":"right_index_finger_tip",
+    "f_ring.02.L":"left_ring_finger_DIP",
+    "f_ring.01.L":"left_ring_finger_PIP",
+    "palm.03.L":"left_ring_finger_MCP",
+
     "f_middle.03.L":"left_middle_finger_tip",
+    "f_middle.02.L":"left_middle_finger_DIP",
+    "f_middle.01.L":"left_middle_finger_PIP",
+    "palm.02.L":"left_middle_finger_MCP",
+
     "f_middle.03.R":"right_middle_finger_tip",
+    "f_middle.02.R":"right_middle_finger_DIP",
+    "f_middle.01.R":"right_middle_finger_PIP",
+    "palm.02.R":"right_middle_finger_MCP",
+
+    "f_index.03.L":"left_index_finger_tip",
+    "f_index.02.L":"left_index_finger_DIP",
+    "f_index.01.L":"left_index_finger_PIP",
+    "palm.01.L":"left_index_finger_MCP",
+
+    "f_index.03.R":"right_index_finger_tip",
+    "f_index.02.R":"right_index_finger_DIP",
+    "f_index.01.R":"right_index_finger_PIP",
+    "palm.01.R":"right_index_finger_MCP",
+
+    
     "thumb.03.L":"left_thumb_tip",
+    "thumb.02.L":"left_thumb_IP",
+    "thumb.01.L":"left_thumb_MCP",
+
     "thumb.03.R":"right_thumb_tip",
+    "thumb.02.R":"right_thumb_IP",
+    "thumb.01.R":"right_thumb_MCP",
+
 }
 
 # by default, chain counts will be set to 1 , if something else is wanted configure it here
 chain_counts = {
     "lid.T.R.003":0,
     "lid.T.L.003":0,
+    # "palm.01.L":2,
+    # "palm.02.L":2,
+    # "palm.03.L":2,
+    # "palm.04.L":2,
+    # "palm.01.R":2,
+    # "palm.02.R":2,
+    # "palm.03.R":2,
+    # "palm.04.R":2,
+
     # "f_pinky.03.R":5,
     # "f_pinky.03.L":5,
     # "f_ring.03.R":5,
@@ -118,31 +158,26 @@ for bone_name, target_name in bone_targets.items():
 # Baking animation
 start_frame = 1
 end_frame = 600
-
+step = 3
 # Select the object
-bpy.ops.object.select_all(action='DESELECT')
-model.rig.select_set(True)
 
 # Set to Object Mode and bake the object's animation
 print("Setting OBJECT mode")
-bpy.ops.object.mode_set(mode='OBJECT')
+model.enable_object()
 print("Initiate baking of object animation")
-bpy.ops.nla.bake(frame_start=start_frame, frame_end=end_frame, only_selected=True, visual_keying=True,
+bpy.ops.nla.bake(frame_start=start_frame, frame_end=end_frame, step = step, only_selected=True, visual_keying=True,
                  clear_constraints=True, use_current_action=True, bake_types={'OBJECT'})
 
-# Select the armature
-bpy.ops.object.select_all(action='DESELECT')
-model.rig.select_set(True)
 
 # Set to Pose Mode and bake the pose's animation
 print("Setting POSE mode")
-bpy.ops.object.mode_set(mode='POSE')
+model.enable_pose()
 print("Initiate baking of POSE animation")
-bpy.ops.nla.bake(frame_start=start_frame, frame_end=end_frame, only_selected=True, visual_keying=True,
+bpy.ops.nla.bake(frame_start=start_frame, frame_end=end_frame, step=step, only_selected=False, visual_keying=True,
                  clear_constraints=True, use_current_action=True, bake_types={'POSE'})
                  
-
-
+print("removing empties now that animation is baked")
 for obj in bpy.data.objects:
     if obj.type == 'EMPTY':
         bpy.data.objects.remove(obj)
+print("empties successfully removed")
