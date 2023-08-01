@@ -57,7 +57,8 @@ class HolisticModel():
         self.rig = bpy.ops.object.armature_human_metarig_add()
         self.rig = bpy.context.object
         self.rig.name = name
-        self.rig.pose.ik_solver = 'ITASC'   # non-standard IK solver 
+        # self.rig.pose.ik_solver = 'ITASC'   # non-standard IK solver 
+        self.rig.pose.ik_solver = 'LEGACY' 
 
         self.set_midhip_origin()
 
@@ -197,13 +198,26 @@ class HolisticModel():
         move_selected(old_location, new_location)
 
     def enable_edit(self):
+        bpy.context.view_layer.objects.active = self.rig
         self.rig.select_set(True)
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.armature.select_all(action='DESELECT')
 
     def enable_object(self):
+        bpy.context.view_layer.objects.active = self.rig
         self.rig.select_set(True)
         bpy.ops.object.mode_set(mode='OBJECT')
+        # bpy.ops.armature.select_all(action='DESELECT')
+
+    def enable_pose(self):
+        bpy.context.view_layer.objects.active = self.rig
+        print("Selecting all elements of the rig")
+        self.rig.select_set(True)
+        # Make sure you know you are in object mode for the rig
+        print("Attempting to shift to POSE mode")
+        bpy.ops.object.mode_set(mode='POSE')
+
+        # bpy.ops.object.mode_set(mode='POSE')
         # bpy.ops.armature.select_all(action='DESELECT')
 
     def set_hip_width(self, width):
