@@ -59,9 +59,20 @@ class HolisticModel():
         self.rig.name = name
         # self.rig.pose.ik_solver = 'ITASC'   # non-standard IK solver 
         self.rig.pose.ik_solver = 'LEGACY' 
+        
+        # delete untracked breast bones
+        self.delete_untracked()
 
         self.set_midhip_origin()
 
+    def delete_untracked(self):
+        delete_bones = ['breast.L', 'breast.R']
+        self.enable_edit()
+        # replace 'bone_name' with the bone you want to remove
+        for bone_name in delete_bones:
+            bone = self.rig.data.edit_bones.get(bone_name)
+            if bone:
+                self.rig.data.edit_bones.remove(bone)
 
     def set_midhip_origin(self):
         # change to pose mode to apply the pose of the metarig
