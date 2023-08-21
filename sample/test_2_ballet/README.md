@@ -1,0 +1,1 @@
+The metarig_config json file here stores the average distances between various landmarks from a seperate calibration trial. These distances are used as targets when the script scales the rig so that it can better track the trajectories via IK.
