@@ -15,6 +15,6 @@ def run_script(filename):
         exec(compile(file.read(), filepath, 'exec'), global_namespace)  
 
 
-filename = r"C:\Users\Mac Prible\repos\rigmarole\rigmarole.py"
+filename = r"C:\Users\Mac Prible\repos\rigmarole\rigmarole\main.py"
 run_script(filename)
  
