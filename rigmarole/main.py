@@ -53,10 +53,12 @@ if IMPORT_EMPTIES:
 
 
 if APPLY_IK:
+    print("Beginning to apply IK")
     rig_anchors = ["right_hip", "left_hip"]
     track_to_anchor = rig_anchors[0]
 
     create_anchor(rig_anchors,track_to_anchor, data)
+    print("Setting rig to anchor")
     set_rig_to_anchor(model)
 
 
@@ -150,7 +152,7 @@ if APPLY_IK:
         # "f_ring.03.L":5,
     }
 
-
+    print("Adding IK constraints")
     for bone_name, target_name in bone_targets.items():
         bone = model.rig.pose.bones[bone_name]    # Add the IK constraint to the bone 
         ik_constraint = bone.constraints.new('IK')
@@ -183,7 +185,7 @@ if BAKE_ANIMATION:
     # Set to Pose Mode and bake the pose's animation
     print("Setting POSE mode")
     model.enable_pose()
-    print("Initiate baking of POSE animation")
+    print("Initiate baking of POSE animation (time intensive operation)")
     bpy.ops.nla.bake(frame_start=start_frame, frame_end=end_frame, step=step, only_selected=False, visual_keying=True,
                     clear_constraints=True, use_current_action=True, bake_types={'POSE'})
                  
