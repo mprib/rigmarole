@@ -15,11 +15,6 @@ if current_dir not in sys.path:
 
 from import_empties import import_empties, set_rig_to_anchor, create_anchor
 from holistic_model import HolisticModel,clear_scene
-reload(import_empties)
-reload(set_rig_to_anchor)
-reload(create_anchor)
-reload(HolisticModel)
-reload(clear_scene)
 
 IMPORT_EMPTIES = True
 APPLY_IK = True
