@@ -11,7 +11,8 @@ bl_info = {
 import bpy
 import copy
 import json
-
+import time
+import csv
 ######################################## BEGIN CODE USED FOR DATA IMPORT ##############################
 def clear_scene():
     # create a clean slate for adding the armature
@@ -81,129 +82,24 @@ def import_empties(csv_list_dict):
     create_empties(empty_names)
     print(f"Empty names are {empty_names}")
 
+    # This code takes a long time...
     for frame in csv_list_dict:
         frame_index = int(frame["sync_index"])
-
+        print(f"Loading in trajectories for frame {frame_index}")
         for empty_name in empty_names:
             location = get_landmark_location(frame, empty_name)
             if location is not None:
                 set_empty_location_at_frame(empty_name,frame_index,location)
 
 
-
-# def get_human_rig():
-#     """
-#     returns a human metarig that has been placed in the scene
-#     note that the origin of the rig has been shifted to the mid-hips
-#     """
-#     ########################## ADD RIG######################################
-#     # place in a new metahuman rig
-#     metahuman = bpy.ops.object.armature_human_metarig_add()
-#     metahuman = bpy.context.object
-#     metahuman.pose.ik_solver = 'ITASC'   # non-standard IK solver 
-#     metahuman.name = "human_rig"
-
-#     ########################### Shift rig origin to mid hips for ease of rig movement #########
-#     # change to pose mode to apply the pose of the metarig
-#     bpy.ops.object.mode_set(mode='POSE')
-
-#     # get the mid hip location in a global frame of reference
-#     left_hip_local = metahuman.pose.bones["thigh.L"].head
-#     right_hip_local = metahuman.pose.bones["thigh.R"].head
-
-#     left_hip_global = metahuman.matrix_world @ left_hip_local
-#     right_hip_global = metahuman.matrix_world @ right_hip_local
-
-#     mid_hips_global = (left_hip_global+right_hip_global)/2
-
-#     # set the object origin to the mid hips 
-#     bpy.ops.object.mode_set(mode='OBJECT')
-#     bpy.ops.object.select_all(action='DESELECT')
-#     metahuman.select_set(True)
-#     bpy.context.scene.cursor.location = mid_hips_global
-#     bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
-#     bpy.context.scene.cursor.location = (0,0,0)
-
-    
-#     bpy.ops.object.empty_add(type='PLAIN_AXES')
-#     rig_anchor = bpy.context.object
-#     rig_anchor.name = "rig_anchor"
-#     rig_anchor.location = metahuman.location
-
-#     return metahuman
-
-# def create_anchor(rig_anchors, track_to_anchor, empty_data):
-#     """
-#     create an anchor empty to parent the rig to. 
-    
-#     Note that this will have not just position, but also orientation. 
-    
-#     2 point tracking of the hips seems to manage well and evokes sensible pelvic tilt in the sagittal plane,
-#     This is likely owing to the IK.
-    
-#     """
-   
-#     bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
-#     bpy.data.objects['Camera'].select_set(True)
-
-#     bpy.ops.object.empty_add(type='PLAIN_AXES')
-#     bpy.ops.object.constraint_add(type="TRACK_TO")
-#     bpy.context.object.constraints["Track To"].name = "Track To"
-#     bpy.context.object.constraints["Track To"].target = bpy.data.objects[track_to_anchor]
-#     bpy.context.object.constraints["Track To"].up_axis = 'UP_Z'
-#     bpy.context.object.constraints["Track To"].track_axis = 'TRACK_NEGATIVE_X'
-#     empty = bpy.context.object
-#     empty.name = "anchor"
-
-#     ### setting human rig location based on rig_anchor points
-#     for frame in empty_data:
-#         sync_index = int(frame["sync_index"])
-    
-#         rig_anchor_locations = []
-#         # get an average location for a given set of anchors
-#         for anchor in rig_anchors:
-#             anchor_location = get_landmark_location(frame,anchor)
-#             # print(f"Location of {anchor} is {anchor_location}")
-#             rig_anchor_locations.append(anchor_location)     
-
-#         observed_anchor_locations = [loc for loc in rig_anchor_locations if loc is not None]
-#         # print(f"observed anchor locations are: {observed_anchor_locations}")
-#         anchor_count = len(observed_anchor_locations)
-#         partial_location = [(loc[0]/anchor_count, loc[1]/anchor_count, loc[2]/anchor_count) for loc in observed_anchor_locations]
-
-#         mean_anchor_location = [0,0,0]
-#         for loc in partial_location:
-#             mean_anchor_location[0]+=loc[0]
-#             mean_anchor_location[1]+=loc[1]
-#             mean_anchor_location[2]+=loc[2]
-
-#         empty.location = mean_anchor_location
-#         empty.keyframe_insert(data_path="location", frame=sync_index)  # insert keyframe
-#         bpy.context.scene.frame_set(sync_index)  # update the current frame
-
-
-# def set_rig_to_anchor(model):
-#     # Get the rig and anchor
-#     # rig = bpy.data.objects['human_rig']
-#     anchor = bpy.data.objects['anchor']
-#     # Create a new copy location constraint
-#     constraint = model.rig.constraints.new('COPY_LOCATION')
-
-#     # Set the target of the constraint to the anchor
-#     constraint.target = anchor
-
-#     # If you want to copy rotation as well, you can create a COPY_ROTATION constraint in the same way:
-#     rotation_constraint = model.rig.constraints.new('COPY_ROTATION')
-#     rotation_constraint.target = anchor
-
 ###################################################### BEGIN HOLISTIC MODEL CREATION ###################################
 
-
 class HolisticModel():
-    
     def __init__(self, name:str):
+        print(f"Creating Model with name {name}")
         # place in a new metahuman rig
         self.rig = bpy.ops.object.armature_human_metarig_add()
+        print("Armature added")
         self.rig = bpy.context.object
         self.rig.name = name
         # self.rig.pose.ik_solver = 'ITASC'   # non-standard IK solver 
@@ -675,7 +571,17 @@ class OT_CreateScaledRig(bpy.types.Operator):
 
     def execute(self, context):
         print(f"Creating scaled rig based on {self.filepath}")
+        # Ensure we are in Object mode
+        if bpy.context.object:
+            if bpy.context.object.mode != 'OBJECT':
+                # Switch to Object mode
+                bpy.ops.object.mode_set(mode='OBJECT')
+
+        # clear_scene()
         # holistic_model.create_scaled_rig(self.filepath)
+        model = HolisticModel("Rigmarole")
+        model.scale_to_config(self.filepath)
+
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -699,7 +605,19 @@ class OT_ImportEmpties(bpy.types.Operator):
 
     def execute(self, context):
         print(f"Importing empties from {self.filepath}")
-        # import_empties.import_from_csv(self.filepath)
+        # load in trajectory data
+        # Create an empty list to hold the data
+        data = []
+        data_row_count = 1
+        print(f"beginning to load csv data at {time.time()}")
+        with open(self.filepath, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                data.append(row)
+                data_row_count+=1
+        print(f"Completing load of csv data at {time.time()}")
+
+        import_empties(data)
         return {'FINISHED'}
 
     def invoke(self, context, event):

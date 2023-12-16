@@ -23,16 +23,16 @@ BAKE_ANIMATION = True
 clear_scene()
 # scale_json = r"C:\Users\Mac Prible\repos\rigmarole\sample\metarig_config_HOLISTIC_OPENSIM.json"
 scale_json = r"C:\Users\Mac Prible\OneDrive\pyxy3d\20230818_do\recording_2\\HOLISTIC_OPENSIM\metarig_config_HOLISTIC_OPENSIM.json"
-model = HolisticModel("test")
+model = HolisticModel("Rigmarole")
 model.scale_to_config(scale_json)
 
 # processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\4_cam_A\recording_4\HOLISTIC_OPENSIM")
 processed_folder = Path(r"C:\Users\Mac Prible\OneDrive\pyxy3d\20230818_do\recording_3\\HOLISTIC_OPENSIM")
 
-config_path = Path(processed_folder, "config.toml")
-config_dict = toml.load(config_path)
+# config_path = Path(processed_folder, "config.toml")
+# config_dict = toml.load(config_path)
 
-fps = config_dict["fps_recording"]
+# fps = config_dict["fps_recording"]
 
 trajectory_data_path = Path(processed_folder, "xyz_HOLISTIC_OPENSIM_labelled.csv")
 
