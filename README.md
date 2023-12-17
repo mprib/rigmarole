@@ -13,5 +13,5 @@ The video below demonstrates the basic process:
 
 
 
-https://github.com/mprib/rigmarole/assets/31831778/89134881-f00c-4e5f-84c2-a4be27ac100f
+https://github.com/mprib/rigmarole/assets/31831778/aa6a05a3-edb4-4b39-937e-2c6343fbfb61
 
