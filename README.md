@@ -12,3 +12,7 @@ The video below demonstrates the basic process:
 4. The rig animation is baked.
 
 <div align="center"><img src = "https://github.com/mprib/rigmarole/assets/31831778/e5956c3a-7591-4685-921b-c01cc4b47f58" width = "50%"></div>
+
+
+https://github.com/mprib/rigmarole/assets/31831778/9818663d-74e3-4d76-8990-0a758098634e
+
