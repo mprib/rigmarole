@@ -7,7 +7,7 @@ import csv
 bl_info = {
     "name": "Comprehensive Rigging and Animation Tool",
     "author": "Mac Prible",
-    "version": (1, 0),
+    "version": (0, 0),
     "blender": (2, 93, 0),
     "location": "View3D > Sidebar > Rigging Tab",
     "description": "An add-on for rigging and animation based on output from Pyxy3D",
@@ -837,9 +837,7 @@ class OT_ApplyIK(bpy.types.Operator):
         track_to_anchor = rig_anchors[0]
 
         rig_name = "Rigmarole"  # Replace with the name of your rig
-
         rig = bpy.data.objects.get(rig_name)
-
         if rig is not None:
             print(f"Rig found: {rig.name}")
         else:
@@ -876,7 +874,51 @@ class OT_BakeAnimation(bpy.types.Operator):
     bl_description = "Bake animation onto the rig"
 
     def execute(self, context):
-        # Your baking logic here
+        # get rig 
+        rig_name = "Rigmarole"  # Replace with the name of your rig
+        rig = bpy.data.objects.get(rig_name)
+        if rig is not None:
+            print(f"Rig found: {rig.name}")
+        else:
+            print("Rig not found.")
+        
+        # get set of frames 
+        # Get a combined list of all animated frames for the rig anchors
+        all_frames = set()
+        all_frames.update(get_animated_frames("anchor"))
+        all_frames = sorted(list(all_frames))
+        start_frame = all_frames[0]
+        end_frame = all_frames[-1]
+        step = 1
+         
+        print("Setting OBJECT mode")
+
+        bpy.context.view_layer.objects.active = rig
+        rig.select_set(True)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        print("Initiate baking of object animation")
+        bpy.ops.nla.bake(frame_start=start_frame, frame_end=end_frame, step = step, only_selected=True, visual_keying=True,
+                        clear_constraints=True, use_current_action=True, bake_types={'OBJECT'})
+
+
+        # Set to Pose Mode and bake the pose's animation
+        print("Setting POSE mode")
+        bpy.context.view_layer.objects.active = rig
+        print("Selecting all elements of the rig")
+        rig.select_set(True)
+        # Make sure you know you are in object mode for the rig
+        print("Attempting to shift to POSE mode")
+        bpy.ops.object.mode_set(mode='POSE')
+        print("Initiate baking of POSE animation (time intensive operation)")
+        bpy.ops.nla.bake(frame_start=start_frame, frame_end=end_frame, step=step, only_selected=False, visual_keying=True,
+                        clear_constraints=True, use_current_action=True, bake_types={'POSE'})
+                 
+        print("removing empties now that animation is baked")
+        for obj in bpy.data.objects:
+            if obj.type == 'EMPTY':
+                bpy.data.objects.remove(obj)
+        print("empties successfully removed")
+        
         return {'FINISHED'}
 
 # UI Panel for the Add-on
