@@ -1,18 +1,19 @@
-bl_info = {
-    "name": "Comprehensive Rigging and Animation Tool",
-    "author": "Your Name",
-    "version": (1, 0),
-    "blender": (2, 93, 0),
-    "location": "View3D > Sidebar > Rigging Tab",
-    "description": "An add-on for rigging and animation based on provided data files",
-    "category": "Animation"
-}
-
 import bpy
 import copy
 import json
 import time
 import csv
+
+bl_info = {
+    "name": "Comprehensive Rigging and Animation Tool",
+    "author": "Mac Prible",
+    "version": (1, 0),
+    "blender": (2, 93, 0),
+    "location": "View3D > Sidebar > Rigging Tab",
+    "description": "An add-on for rigging and animation based on output from Pyxy3D",
+    "category": "Animation"
+}
+
 ######################################## BEGIN CODE USED FOR DATA IMPORT ##############################
 def clear_scene():
     # create a clean slate for adding the armature
@@ -534,25 +535,223 @@ def move_selected(old_location, new_location):
 def scale_selected(factor):
     bpy.ops.transform.resize(value=(factor, factor, factor))
 
-def clear_scene():
-    # create a clean slate for adding the armature
-    ## get a list of all the objects
-    all_objects = bpy.context.scene.objects
-    ## Delete all but the ones you want
-    for obj in all_objects:
-        # If the object is not a camera or light, delete it
-        print(obj.name)
-        if obj.type not in ['CAMERA', 'LIGHT']:
-            bpy.data.objects.remove(obj, do_unlink=True)
+###################################################### BEGIN IK RELATED CODE  ##########################################
 
-    # reset cursor to origin, just in case
-    bpy.context.scene.cursor.location = (0,0,0)
+# def create_anchor(rig_anchors, track_to_anchor, empty_data):
+#     """
+#     create an anchor empty to parent the rig to. 
+    
+#     Note that this will have not just position, but also orientation. 
+    
+#     2 point tracking of the hips seems to manage well and evokes sensible pelvic tilt in the sagittal plane,
+#     This is likely owing to the IK.
+    
+#     """
+   
+#     bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+#     bpy.data.objects['Camera'].select_set(True)
 
+#     bpy.ops.object.empty_add(type='PLAIN_AXES')
+#     bpy.ops.object.constraint_add(type="TRACK_TO")
+#     bpy.context.object.constraints["Track To"].name = "Track To"
+#     bpy.context.object.constraints["Track To"].target = bpy.data.objects[track_to_anchor]
+#     bpy.context.object.constraints["Track To"].up_axis = 'UP_Z'
+#     bpy.context.object.constraints["Track To"].track_axis = 'TRACK_NEGATIVE_X'
+#     empty = bpy.context.object
+#     empty.name = "anchor"
+
+
+#     # Need to figure out how many 
+#     ### setting human rig location based on rig_anchor points
+#     for frame in empty_data:
+#         sync_index = int(frame["sync_index"])
+    
+#         ############ BEGIN COMPLICATED MEAN ANCHOR POSITION
+#         # I believe I set this up to accomodate instances where an empty blinks out of view
+#         # it is a complicated way to take an average of two positions
+#         rig_anchor_locations = []
+#         for anchor in rig_anchors:
+#             anchor_location = get_landmark_location(frame,anchor)
+#             rig_anchor_locations.append(anchor_location)     
+
+#         observed_anchor_locations = [loc for loc in rig_anchor_locations if loc is not None]
+#         anchor_count = len(observed_anchor_locations)
+#         partial_location = [(loc[0]/anchor_count, loc[1]/anchor_count, loc[2]/anchor_count) for loc in observed_anchor_locations]
+
+#         mean_anchor_location = [0,0,0]
+#         for loc in partial_location:
+#             mean_anchor_location[0]+=loc[0]
+#             mean_anchor_location[1]+=loc[1]
+#             mean_anchor_location[2]+=loc[2]
+#         ########  END COMPLICATED MEAN POSITION CALCULATION
+        
+#         empty.location = mean_anchor_location
+#         empty.keyframe_insert(data_path="location", frame=sync_index)  # insert keyframe
+#         bpy.context.scene.frame_set(sync_index)  # update the current frame
+
+
+def get_animated_frames(obj_name):
+    obj = bpy.data.objects.get(obj_name)
+    if not obj or not obj.animation_data or not obj.animation_data.action:
+        return []
+
+    animated_frames = set()
+    for fcurve in obj.animation_data.action.fcurves:
+        for keyframe_point in fcurve.keyframe_points:
+            animated_frames.add(int(keyframe_point.co.x))  # co.x is the frame number
+
+    return sorted(list(animated_frames))
+
+def create_anchor(rig_anchors, track_to_anchor):
+    """
+    create an anchor empty to parent the rig to. 
+    
+    Note that this will have not just position, but also orientation. 
+    
+    2 point tracking of the hips seems to manage well and evokes sensible pelvic tilt in the sagittal plane,
+    This is likely owing to the IK.
+    
+    """
+   
+    bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+    bpy.data.objects['Camera'].select_set(True)
+
+    bpy.ops.object.empty_add(type='PLAIN_AXES')
+    bpy.ops.object.constraint_add(type="TRACK_TO")
+    bpy.context.object.constraints["Track To"].name = "Track To"
+    bpy.context.object.constraints["Track To"].target = bpy.data.objects[track_to_anchor]
+    bpy.context.object.constraints["Track To"].up_axis = 'UP_Z'
+    bpy.context.object.constraints["Track To"].track_axis = 'TRACK_NEGATIVE_X'
+    anchor = bpy.context.object
+    anchor.name = "anchor"
+    
+    # Get a combined list of all animated frames for the rig anchors
+    all_frames = set()
+    for anchor_name in rig_anchors:
+        all_frames.update(get_animated_frames(anchor_name))
+    all_frames = sorted(list(all_frames))
+
+    # Iterate over each frame and calculate the mean location
+    for frame in all_frames:
+        bpy.context.scene.frame_set(frame)  # update the current frame
+        mean_location = [0, 0, 0]
+        for anchor_name in rig_anchors:
+            empty = bpy.data.objects.get(anchor_name)
+            if empty:
+                mean_location[0] += empty.location.x
+                mean_location[1] += empty.location.y
+                mean_location[2] += empty.location.z
+
+        # Calculate mean location
+        mean_location = [coord / len(rig_anchors) for coord in mean_location]
+
+        # Set and keyframe the anchor's location
+        anchor.location = mean_location
+        anchor.keyframe_insert(data_path="location", frame=frame)
+
+def set_rig_to_anchor(rig):
+    # Get the rig and anchor
+    # rig = bpy.data.objects['human_rig']
+    anchor = bpy.data.objects['anchor']
+    # Create a new copy location constraint
+    constraint = rig.constraints.new('COPY_LOCATION')
+
+    # Set the target of the constraint to the anchor
+    constraint.target = anchor
+
+    # If you want to copy rotation as well, you can create a COPY_ROTATION constraint in the same way:
+    rotation_constraint = rig.constraints.new('COPY_ROTATION')
+    rotation_constraint.target = anchor
+
+
+BONE_TARGETS = {
+    "lid.T.R.003":"right_inner_eye",
+    "lid.T.L.003":"left_inner_eye",
+    "shoulder.R":"right_shoulder",
+    "shoulder.L":"left_shoulder",
+    "upper_arm.R":"right_elbow",
+    "upper_arm.L":"left_elbow",
+    "forearm.R":"right_wrist",
+    "forearm.L":"left_wrist",
+    "thigh.R":"right_knee",
+    "thigh.L":"left_knee",
+    "shin.R":"right_ankle",
+    "shin.L":"left_ankle",
+    "foot.R":"right_foot_index",
+    "foot.L":"left_foot_index",
+
+    "f_pinky.03.R":"right_pinky_tip",
+    "f_pinky.02.R":"right_pinky_DIP",
+    "f_pinky.01.R":"right_pinky_PIP",
+    "palm.04.R":"right_pinky_MCP",
+   
+    "f_pinky.03.L":"left_pinky_tip",
+    "f_pinky.02.L":"left_pinky_DIP",
+    "f_pinky.01.L":"left_pinky_PIP",
+    "palm.04.L":"left_pinky_MCP",
+
+    "f_ring.03.R":"right_ring_finger_tip",
+    "f_ring.02.R":"right_ring_finger_DIP",
+    "f_ring.01.R":"right_ring_finger_PIP",
+    "palm.03.R":"right_ring_finger_MCP",
+
+    "f_ring.03.L":"left_ring_finger_tip",
+    "f_ring.02.L":"left_ring_finger_DIP",
+    "f_ring.01.L":"left_ring_finger_PIP",
+    "palm.03.L":"left_ring_finger_MCP",
+
+    "f_middle.03.L":"left_middle_finger_tip",
+    "f_middle.02.L":"left_middle_finger_DIP",
+    "f_middle.01.L":"left_middle_finger_PIP",
+    "palm.02.L":"left_middle_finger_MCP",
+
+    "f_middle.03.R":"right_middle_finger_tip",
+    "f_middle.02.R":"right_middle_finger_DIP",
+    "f_middle.01.R":"right_middle_finger_PIP",
+    "palm.02.R":"right_middle_finger_MCP",
+
+    "f_index.03.L":"left_index_finger_tip",
+    "f_index.02.L":"left_index_finger_DIP",
+    "f_index.01.L":"left_index_finger_PIP",
+    "palm.01.L":"left_index_finger_MCP",
+
+    "f_index.03.R":"right_index_finger_tip",
+    "f_index.02.R":"right_index_finger_DIP",
+    "f_index.01.R":"right_index_finger_PIP",
+    "palm.01.R":"right_index_finger_MCP",
 
     
+    "thumb.03.L":"left_thumb_tip",
+    "thumb.02.L":"left_thumb_IP",
+    "thumb.01.L":"left_thumb_MCP",
+
+    "thumb.03.R":"right_thumb_tip",
+    "thumb.02.R":"right_thumb_IP",
+    "thumb.01.R":"right_thumb_MCP",
+
+}
+
+# by default, chain counts will be set to 1 , if something else is wanted configure it here
+CHAIN_COUNTS = {
+    "lid.T.R.003":0,
+    "lid.T.L.003":0,
+    # "palm.01.L":2,
+    # "palm.02.L":2,
+    # "palm.03.L":2,
+    # "palm.04.L":2,
+    # "palm.01.R":2,
+    # "palm.02.R":2,
+    # "palm.03.R":2,
+    # "palm.04.R":2,
+
+    # "f_pinky.03.R":5,
+    # "f_pinky.03.L":5,
+    # "f_ring.03.R":5,
+    # "f_ring.03.L":5,
+}
 
 
-#######################################################  BEGIN ACTUAL ADD ON SCRIPT ##########################################
+######################################################  BEGIN ACTUAL ADD ON SCRIPT ##########################################
 # Operator for Creating Scaled Rig
 class OT_CreateScaledRig(bpy.types.Operator):
     bl_idname = "rigmarole.create_scaled_rig"
@@ -634,6 +833,39 @@ class OT_ApplyIK(bpy.types.Operator):
 
     def execute(self, context):
         print("Applying Inverse Kinematics...")
+        rig_anchors = ["right_hip", "left_hip"]
+        track_to_anchor = rig_anchors[0]
+
+        rig_name = "Rigmarole"  # Replace with the name of your rig
+
+        rig = bpy.data.objects.get(rig_name)
+
+        if rig is not None:
+            print(f"Rig found: {rig.name}")
+        else:
+            print("Rig not found.")
+
+        create_anchor(rig_anchors,track_to_anchor)
+        print("Setting rig to anchor")
+        print(f"Tracking of anchored segment based off of {track_to_anchor}")
+
+        set_rig_to_anchor(rig)
+
+        print("Adding IK constraints")
+        for bone_name, target_name in BONE_TARGETS.items():
+            bone = rig.pose.bones[bone_name]    # Add the IK constraint to the bone 
+            ik_constraint = bone.constraints.new('IK')
+    
+            # Set the target of the IK constraint
+            ik_constraint.target = bpy.data.objects[target_name]
+            print(f"Applying IK contstraint for bone {bone_name} to follow {target_name}")
+            # Set the chain count
+            if bone_name in CHAIN_COUNTS.keys():
+                ik_constraint.chain_count = CHAIN_COUNTS[bone_name]
+            else:
+                ik_constraint.chain_count = 1
+ 
+        
         # Your IK application logic here
         return {'FINISHED'}
 
