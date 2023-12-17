@@ -10,3 +10,5 @@ The video below demonstrates the basic process:
 2. Empty trajectories are imported that correspond to the tracked 3D trajectories of joint and face landmarks.
 3. Inverse Kinematics are applied to animate the rig.
 4. The rig animation is baked.
+
+<div align="center"><img src = "https://github.com/mprib/rigmarole/assets/31831778/e5956c3a-7591-4685-921b-c01cc4b47f58" width = "50%"></div>
